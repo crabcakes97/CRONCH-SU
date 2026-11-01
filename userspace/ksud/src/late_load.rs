@@ -62,9 +62,14 @@ pub fn run(
                     info!("--ko-path given, ignoring --kmi (file wins)");
                 }
                 info!("Loading kernelsu.ko from file {}...", path.display());
-                let data = std::fs::read(path)
-                    .with_context(|| format!("Failed to read kernelsu.ko file {}", path.display()))?;
-                anyhow::ensure!(!data.is_empty(), "kernelsu.ko file {} is empty", path.display());
+                let data = std::fs::read(path).with_context(|| {
+                    format!("Failed to read kernelsu.ko file {}", path.display())
+                })?;
+                anyhow::ensure!(
+                    !data.is_empty(),
+                    "kernelsu.ko file {} is empty",
+                    path.display()
+                );
                 Cow::Owned(data)
             }
             None => {

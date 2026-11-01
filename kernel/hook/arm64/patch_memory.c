@@ -191,8 +191,8 @@ static int ksu_patch_text_cb(void *arg)
  * -EOPNOTSUPP; hooks ride the tracepoint dispatcher instead. */
 int ksu_patch_text(void *dst, void *src, size_t len, int flags)
 {
-    pr_info("patch_text disabled for this Samsung target: dst=0x%lx len=%zu flags=0x%x\n",
-        (unsigned long)dst, len, flags);
+    pr_info("patch_text disabled for this Samsung target: dst=0x%lx len=%zu flags=0x%x\n", (unsigned long)dst, len,
+            flags);
     return -EOPNOTSUPP;
 }
 

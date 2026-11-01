@@ -321,7 +321,7 @@ fun CronchometerSectionMiuix(
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         top.yukonga.miuix.kmp.basic.Text(
             text = stringResource(R.string.cronchometer_title),
-            fontFamily = CronchDisplayFontFamily,
+            // Miuix Text takes no fontFamily parameter; size + weight carry the title styling.
             fontSize = 18.sp,
             fontWeight = FontWeight.SemiBold,
             color = CronchDoritoOrange,

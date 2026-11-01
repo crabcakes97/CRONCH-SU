@@ -673,11 +673,12 @@ pub fn run() -> Result<()> {
         } => {
             if let Some(port) = magica {
                 let ko_path = ko_path.map(|p| p.to_string_lossy().into_owned());
-                return crate::magica::run(port, &package_name, allow_shell, kmi, ko_path)
-                    .map_err(|e| {
+                return crate::magica::run(port, &package_name, allow_shell, kmi, ko_path).map_err(
+                    |e| {
                         error!("Error running magica: {e}");
                         e
-                    });
+                    },
+                );
             }
             let result = crate::late_load::run(&package_name, kmi, ko_path, allow_shell);
             if post_magica {
