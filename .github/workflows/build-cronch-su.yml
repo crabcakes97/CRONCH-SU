@@ -56,9 +56,11 @@ jobs:
       - name: Build debug APK
         run: ./gradlew clean :app:assembleDebug -PKSU_NAME="Cronch SU" --stacktrace
 
+      # NOTE: defaults.run.working-directory applies to run: steps only,
+      # so this path is relative to the repo root, not ./manager.
       - name: Upload APK
         uses: actions/upload-artifact@v7
         with:
           name: cronch-su-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: manager/app/build/outputs/apk/debug/*.apk
           retention-days: 30
