@@ -1,8 +1,30 @@
-# Build Cronch SU (debug APK) on GitHub Actions.
+# Build Cronch SU (debug APK) on GitHub Actions — PINNED DEBUG KEY version.
 #
-# Why this exists: the debug APK needs no signing secrets. Push this tree
-# to GitHub and the Actions tab produces a ready-to-install Cronch SU APK
-# as a downloadable artifact. No PC needed, no keystore to set up.
+# Why this exists: the debug APK needs no signing secrets, AND every build
+# must carry the SAME signing certificate. The kernel module crowns the
+# manager only if the APK's v2 signature matches the certificate baked
+# into the module (see kernel/manager/apk_sign.c + throne_tracker.c).
+# A fresh per-runner debug key would never match, so this workflow installs
+# the pinned debug keystore from the repo root before building.
+#
+# Setup (one time, by the repo owner):
+#   1. Copy the pinned keystore into the repo root as `debug.keystore`
+#      (the file whose certificate has SHA-256
+#      4f3cc4b47a63a9d5a971ab86516bdfd4c2ae3db7e116be30a1053f2868df0324
+#      and DER size 791 / 0x317). Do NOT regenerate it: the kernel module
+#      cronch-su-module-android15-6.6.ko expects exactly this certificate.
+#   2. Replace this file with the workflow in the repo.
+#
+# SECURITY TRADEOFF (accepted by the owner, "quick and dirty"): this is a
+# DEBUG key and it lives in the public repo. Anyone holding it can sign a
+# manager APK the kernel module will crown, and a crowned manager can grant
+# root. Do not use this route for a build you distribute beyond personal
+# use. The private-key route (key in GitHub secrets) replaces this file.
+#
+# v3/v4 signing MUST stay off: the kernel's signature-block walk rejects
+# any pair id it does not know (v3 blocks fail the crown check), and ksud's
+# own parser errors on v3 signatures too. The verify step below enforces
+# v1+v2 only plus the exact certificate fingerprint.
 #
 # Usage: push to the main branch (or run it by hand from Actions ->
 # "Build Cronch SU" -> Run workflow), then download the
@@ -18,12 +40,14 @@ on:
     branches: ["main"]
     paths:
       - ".github/workflows/build-cronch-su.yml"
+      - "debug.keystore"
       - "manager/**"
       - "CRONCHSU.md"
   pull_request:
     branches: ["main"]
     paths:
       - ".github/workflows/build-cronch-su.yml"
+      - "debug.keystore"
       - "manager/**"
   workflow_dispatch:
 
@@ -53,8 +77,32 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
 
+      # The pinned debug key MUST be the key every build is signed with,
+      # or the kernel module will not crown the manager. AGP uses
+      # ~/.android/debug.keystore for debug builds, so install it there.
+      # Fails loudly if the keystore is missing from the repo root.
+      - name: Install pinned debug keystore
+        run: |
+          test -f "$GITHUB_WORKSPACE/debug.keystore" || { echo "ERROR: debug.keystore missing at repo root; see workflow header."; exit 1; }
+          mkdir -p ~/.android
+          cp "$GITHUB_WORKSPACE/debug.keystore" ~/.android/debug.keystore
+
       - name: Build debug APK
-        run: ./gradlew clean :app:assembleDebug -PKSU_NAME="Cronch SU" --stacktrace
+        run: ./gradlew clean :app:assembleDebug -PKSU_NAME="Cronch SU" -Pandroid.injected.signing.v3-enabled=false -Pandroid.injected.signing.v4-enabled=false --stacktrace
+
+      # The crown check needs v1+v2 only and this exact certificate.
+      # Fails the run if either condition is not met.
+      - name: Verify signing certificate
+        run: |
+          APK=$(ls app/build/outputs/apk/debug/*.apk | head -n1)
+          echo "APK: $APK"
+          keytool -printcert -jarfile "$APK" | tee /tmp/cert.txt
+          grep -q "SHA256: 4F:3C:C4:B4:7A:63:A9:D5:A9:71:AB:86:51:6B:DF:D4:C2:AE:3D:B7:E1:16:BE:30:A1:05:3F:28:68:DF:03:24" /tmp/cert.txt || { echo "ERROR: APK certificate does not match the pinned debug key."; exit 1; }
+          APKSIGNER=$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}" -name apksigner -type f 2>/dev/null | head -n1)
+          test -n "$APKSIGNER" || { echo "ERROR: apksigner not found under ANDROID_HOME; cannot verify signature schemes."; exit 1; }
+          "$APKSIGNER" verify --verbose "$APK" | tee /tmp/verify.txt
+          grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" /tmp/verify.txt
+          grep -q "Verified using v3 scheme (APK Signature Scheme v3): false" /tmp/verify.txt
 
       # NOTE: defaults.run.working-directory applies to run: steps only,
       # so this path is relative to the repo root, not ./manager.
