@@ -1,15 +1,1 @@
-{
-  "schemaVersion": 1,
-  "generic": [
-    {
-      "flavor": "kernelsu",
-      "kmis": ["android15-6.6"],
-      "daemon": {
-        "url": "https://raw.githubusercontent.com/crabcakes97/CRONCH-SU/main/support/ksud-cronchsu",
-        "size": 5271072,
-        "sha256": "a8b51424af9ec53e0a373dbedef2465fec4fc7c7fc9aefec8e93e2d8f94f770e"
-      },
-      "susfs": false
-    }
-  ]
-}
+{"generic":[{"daemon":{"sha256":"dff8ac73e6b600e9fb5e8f9800fadd828008aa0c280034b918dfe68c0807bb6c","size":5222992,"url":"https://raw.githubusercontent.com/crabcakes97/CRONCH-SU/main/support/ksud-cronchsu"},"flavor":"kernelsu","kmis":["android15-6.6"],"susfs":false}],"schemaVersion":1}
