@@ -1,0 +1,64 @@
+# Build Cronch SU (debug APK) on GitHub Actions.
+#
+# Why this exists: the debug APK needs no signing secrets. Push this tree
+# to GitHub and the Actions tab produces a ready-to-install Cronch SU APK
+# as a downloadable artifact. No PC needed, no keystore to set up.
+#
+# Usage: push to the main branch (or run it by hand from Actions ->
+# "Build Cronch SU" -> Run workflow), then download the
+# "cronch-su-debug-apk" artifact. Uninstall any release-signed KernelSU
+# manager first: a debug-signed build cannot update over it. The app
+# label is "Cronch SU" via -PKSU_NAME; the package id stays
+# me.weishu.kernelsu on purpose, the kernel side crowns by it.
+
+name: Build Cronch SU
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/build-cronch-su.yml"
+      - "manager/**"
+      - "CRONCHSU.md"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/build-cronch-su.yml"
+      - "manager/**"
+  workflow_dispatch:
+
+jobs:
+  build-debug-apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./manager
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup NDK r29
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r29
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Build debug APK
+        run: ./gradlew clean :app:assembleDebug -PKSU_NAME="Cronch SU" --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: cronch-su-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
