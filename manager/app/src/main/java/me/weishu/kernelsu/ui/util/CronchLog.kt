@@ -31,9 +31,19 @@ object CronchLog {
         val seq: Long,
         val tag: String,
         val message: String,
+        /** Rainbow step this line was born with. Fixed at append time. */
+        val hueIndex: Long,
     )
 
     private val seq = AtomicLong(0L)
+
+    /**
+     * Rainbow step counter. Advanced ONLY by [log], i.e. only when a real
+     * line arrives. [clear] deliberately never touches it, so tapping
+     * Clear can never change a line's color: colors cycle on their own
+     * as lines arrive, with zero taps.
+     */
+    private val hueSeq = AtomicLong(0L)
 
     private val _entries = MutableStateFlow<List<Entry>>(emptyList())
     val entries: StateFlow<List<Entry>> = _entries.asStateFlow()
@@ -69,6 +79,7 @@ object CronchLog {
                 seq = seq.getAndIncrement(),
                 tag = tag,
                 message = message,
+                hueIndex = hueSeq.getAndIncrement(),
             )
             _entries.update { (it + entry).takeLast(MAX_LINES) }
         } catch (_: Exception) {
@@ -93,6 +104,9 @@ object CronchLog {
                     seq = seq.getAndIncrement(),
                     tag = "Coop",
                     message = "Log cleared",
+                    // Peek, do not advance: the cleared line keeps the
+                    // current rainbow step, so Clear never drives color.
+                    hueIndex = hueSeq.get(),
                 )
             )
         } catch (_: Exception) {
@@ -112,13 +126,12 @@ object CronchLog {
 
     /**
      * Rainbow color for one log line. The hue rotates by the golden angle
-     * per line so neighbors always differ clearly. Lightness is chosen for
-     * readability on both themes: bright and saturated on dark surfaces,
-     * dark and saturated on light surfaces. The log background itself is
-     * always a plain theme surface — never rainbow-on-rainbow.
+     * per ARRIVAL (the line's stored hueIndex), so each newly appended
+     * line takes the next color on its own. Recomposition, scrolling,
+     * and clearing never recolor a line: the hue is born with it.
      */
     fun rainbowColor(entry: Entry, isDark: Boolean): Color {
-        val hue = (entry.seq * 137L % 360L).toFloat()
+        val hue = (entry.hueIndex * 137L % 360L).toFloat()
         return if (isDark) {
             Color.hsv(hue, 0.62f, 0.95f)
         } else {

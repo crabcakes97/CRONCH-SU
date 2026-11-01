@@ -28,7 +28,6 @@ import androidx.compose.material.icons.filled.LayersClear
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.SystemUpdateAlt
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Icon
@@ -99,15 +98,6 @@ fun SettingPagerMaterial(
                 SegmentedColumn(
                     modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 13.dp),
                     content = listOf(
-                        {
-                            SegmentedSwitchItem(
-                                icon = Icons.Filled.SystemUpdate,
-                                title = stringResource(id = R.string.settings_check_update),
-                                summary = stringResource(id = R.string.settings_check_update_summary),
-                                checked = uiState.checkUpdate,
-                                onCheckedChange = actions.onSetCheckUpdate
-                            )
-                        },
                         {
                             SegmentedSwitchItem(
                                 icon = Icons.Filled.SystemUpdateAlt,

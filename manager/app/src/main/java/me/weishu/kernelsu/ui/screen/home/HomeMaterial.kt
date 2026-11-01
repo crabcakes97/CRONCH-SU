@@ -1,10 +1,6 @@
 package me.weishu.kernelsu.ui.screen.home
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -45,7 +41,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
-import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -64,7 +59,6 @@ import me.weishu.kernelsu.KernelVersion
 import me.weishu.kernelsu.Natives
 import me.weishu.kernelsu.R
 import me.weishu.kernelsu.ui.component.WarningLevel
-import me.weishu.kernelsu.ui.component.dialog.rememberConfirmDialog
 import me.weishu.kernelsu.ui.component.material.ExpressiveScaffold
 import me.weishu.kernelsu.ui.component.material.SegmentedColumn
 import me.weishu.kernelsu.ui.component.material.SegmentedListItem
@@ -72,6 +66,14 @@ import me.weishu.kernelsu.ui.component.material.TonalCard
 import me.weishu.kernelsu.ui.component.material.expressiveTopAppBarColors
 import me.weishu.kernelsu.ui.component.rebootlistpopup.RebootListPopup
 import me.weishu.kernelsu.ui.component.statustag.StatusTag
+import me.weishu.kernelsu.ui.theme.CronchCardShape
+import me.weishu.kernelsu.ui.theme.CronchCoopBrown
+import me.weishu.kernelsu.ui.theme.CronchDisplayFontFamily
+import me.weishu.kernelsu.ui.theme.CronchDoritoOrange
+import me.weishu.kernelsu.ui.theme.CronchFlavorStripColors
+import me.weishu.kernelsu.ui.theme.CronchGumboRed
+import me.weishu.kernelsu.ui.theme.CronchNachoGold
+import me.weishu.kernelsu.ui.theme.CronchRanchCream
 
 @Composable
 fun HomePagerMaterial(
@@ -93,10 +95,8 @@ fun HomePagerMaterial(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(13.dp)
         ) {
+            CronchWordmark()
             CronchLogConsoleMaterial()
-            if (state.checkUpdateEnabled) {
-                UpdateCard(state = state, actions = actions)
-            }
             if (state.showManagerPrBuildWarning) {
                 WarningCard(stringResource(id = R.string.home_pr_build_warning), level = WarningLevel.Notice)
             } else if (state.showKernelPrBuildWarning) {
@@ -130,12 +130,25 @@ fun HomePagerMaterial(
             if (state.showRootWarning) {
                 WarningCard(stringResource(id = R.string.grant_root_failed))
             }
-            StatusCard(
+            CoolRanchPanel(
                 state = state,
                 actions = actions,
             )
             InfoCard(systemInfo = state.systemInfo)
             SupportLinks(onOpenUrl = actions.onOpenUrl)
+            HonorableMentions(onOpenUrl = actions.onOpenUrl)
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = stringResource(R.string.cronch_motto),
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = CronchDisplayFontFamily
+                    ),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
             Spacer(
                 Modifier.height(
                     bottomInnerPadding + if (!Natives.isFullFeatured())
@@ -147,32 +160,22 @@ fun HomePagerMaterial(
 }
 
 @Composable
-private fun UpdateCard(
-    state: HomeUiState,
-    actions: HomeActions,
-) {
-    val newVersion = state.latestVersionInfo
-    val title = stringResource(id = R.string.module_changelog)
-    val updateText = stringResource(id = R.string.module_update)
-
-    AnimatedVisibility(
-        visible = state.hasUpdate,
-        enter = fadeIn() + expandVertically(),
-        exit = shrinkVertically() + fadeOut()
-    ) {
-        val updateDialog = rememberConfirmDialog(onConfirm = { actions.onOpenUrl(newVersion.downloadUrl) })
-        WarningCard(
-            message = stringResource(id = R.string.new_version_available, newVersion.versionCode),
-            level = WarningLevel.Notice
-        ) {
-            if (newVersion.changelog.isEmpty()) {
-                actions.onOpenUrl(newVersion.downloadUrl)
-            } else {
-                updateDialog.showConfirm(
-                    title = title,
-                    content = newVersion.changelog,
-                    markdown = true,
-                    confirm = updateText
+private fun CronchWordmark() {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.app_name),
+            style = MaterialTheme.typography.displaySmall.copy(
+                fontFamily = CronchDisplayFontFamily
+            ),
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Row(modifier = Modifier.fillMaxWidth()) {
+            CronchFlavorStripColors.forEach { flavorColor ->
+                Spacer(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(6.dp)
+                        .background(flavorColor)
                 )
             }
         }
@@ -193,20 +196,26 @@ private fun TopBar(
 }
 
 @Composable
-private fun StatusCard(
+private fun CoolRanchPanel(
     state: HomeUiState,
     actions: HomeActions,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.home_cool_ranch_panel),
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontFamily = CronchDisplayFontFamily
+            ),
+            color = CronchDoritoOrange,
+            modifier = Modifier.padding(start = 4.dp),
+        )
+        // The Cool Ranch Panel: ranch cream in every theme, never grey.
+        // Status lives in the title, the icon, and the tags -- not in the
+        // background color.
+        val containerColor = CronchRanchCream
+        val contentColor = CronchCoopBrown
         val ksuActive = state.ksuVersion != null
         val notInstalled = !ksuActive && state.kernelVersion.isGKI()
-
-        val containerColor = when {
-            ksuActive -> MaterialTheme.colorScheme.primaryContainer
-            notInstalled -> MaterialTheme.colorScheme.tertiaryContainer
-            else -> MaterialTheme.colorScheme.errorContainer
-        }
-        val contentColor = MaterialTheme.colorScheme.contentColorFor(containerColor)
 
         val statusIcon = when {
             ksuActive -> Icons.Rounded.CheckCircle
@@ -244,8 +253,8 @@ private fun StatusCard(
                 Button(
                     onClick = actions.onJailbreakClick,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError
+                        containerColor = CronchDoritoOrange,
+                        contentColor = Color.White
                     )
                 ) {
                     Text(stringResource(R.string.home_jailbreak))
@@ -257,7 +266,7 @@ private fun StatusCard(
             modifier = Modifier.fillMaxWidth(),
             color = containerColor,
             contentColor = contentColor,
-            shape = MaterialTheme.shapes.large,
+            shape = CronchCardShape,
             onClick = {
                 if (!state.isLateLoadMode) {
                     actions.onInstallClick()
@@ -282,8 +291,8 @@ private fun StatusCard(
                             Spacer(Modifier.width(8.dp))
                             StatusTag(
                                 label = stringResource(R.string.home_lkm_custom),
-                                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                                backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                contentColor = CronchCoopBrown,
+                                backgroundColor = CronchNachoGold,
                             )
                         }
                     }
@@ -307,16 +316,16 @@ private fun StatusCard(
                             Spacer(Modifier.width(8.dp))
                             StatusTag(
                                 label = stringResource(id = R.string.safe_mode),
-                                contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                                backgroundColor = MaterialTheme.colorScheme.errorContainer
+                                contentColor = Color.White,
+                                backgroundColor = CronchGumboRed
                             )
                         }
                         if (ksuActive && state.isLateLoadMode) {
                             Spacer(Modifier.width(8.dp))
                             StatusTag(
                                 label = stringResource(id = R.string.jailbreak_mode),
-                                contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                                backgroundColor = MaterialTheme.colorScheme.errorContainer
+                                contentColor = Color.White,
+                                backgroundColor = CronchGumboRed
                             )
                         }
                     }
@@ -333,8 +342,12 @@ private fun WarningCard(
     onClick: (() -> Unit)? = null
 ) {
     val containerColor = when (level) {
-        WarningLevel.Error -> MaterialTheme.colorScheme.errorContainer
-        WarningLevel.Notice -> MaterialTheme.colorScheme.tertiaryContainer
+        WarningLevel.Error -> CronchGumboRed
+        WarningLevel.Notice -> CronchNachoGold
+    }
+    val contentColor = when (level) {
+        WarningLevel.Error -> Color.White
+        WarningLevel.Notice -> CronchCoopBrown
     }
     val content = @Composable {
         Row(
@@ -345,14 +358,14 @@ private fun WarningCard(
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.contentColorFor(containerColor)
+                color = contentColor
             )
         }
     }
     if (onClick != null) {
-        TonalCard(containerColor = containerColor, onClick = onClick, content = content)
+        TonalCard(containerColor = containerColor, contentColor = contentColor, onClick = onClick, content = content)
     } else {
-        TonalCard(containerColor = containerColor, content = content)
+        TonalCard(containerColor = containerColor, contentColor = contentColor, content = content)
     }
 }
 
@@ -386,6 +399,70 @@ private fun SupportLinks(
                 trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
             )
         }
+    }
+}
+
+@Composable
+private fun HonorableMentions(
+    onOpenUrl: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.cronch_honorable_mentions),
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontFamily = CronchDisplayFontFamily
+            ),
+            color = CronchDoritoOrange,
+            modifier = Modifier.padding(start = 4.dp),
+        )
+        SegmentedColumn(modifier = Modifier.fillMaxWidth()) {
+            item {
+                SegmentedListItem(
+                    onClick = { onOpenUrl("https://github.com/crabcakes97") },
+                    headlineContent = { Text(stringResource(R.string.cronch_credit_fork)) },
+                    leadingContent = {
+                        Icon(Icons.Filled.VolunteerActivism, stringResource(R.string.cronch_credit_fork))
+                    },
+                    trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+                )
+            }
+            item {
+                SegmentedListItem(
+                    onClick = { onOpenUrl("https://github.com/tiann/KernelSU") },
+                    headlineContent = { Text(stringResource(R.string.cronch_credit_upstream)) },
+                    leadingContent = {
+                        Icon(Icons.Filled.Tag, stringResource(R.string.cronch_credit_upstream))
+                    },
+                    trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+                )
+            }
+            item {
+                SegmentedListItem(
+                    onClick = { onOpenUrl("https://github.com/KernelSU-Next/KernelSU-Next") },
+                    headlineContent = { Text(stringResource(R.string.cronch_credit_next)) },
+                    leadingContent = {
+                        Icon(Icons.Filled.DeveloperBoard, stringResource(R.string.cronch_credit_next))
+                    },
+                    trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+                )
+            }
+        }
+        Text(
+            text = stringResource(R.string.cronch_magisk_next_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 4.dp, end = 4.dp),
+        )
+        Text(
+            text = stringResource(R.string.cronch_chainfire_tribute),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 4.dp, end = 4.dp),
+        )
     }
 }
 
@@ -496,8 +573,8 @@ private fun InfoCard(
 
 @Preview(name = "Activated")
 @Composable
-private fun StatusCardActivatedPreview() {
-    StatusCard(
+private fun CoolRanchPanelActivatedPreview() {
+    CoolRanchPanel(
         state = previewHomeScreenState(ksuVersion = 12345, lkmMode = true),
         actions = HomeActions({}, {})
     )
@@ -505,14 +582,14 @@ private fun StatusCardActivatedPreview() {
 
 @Preview(name = "Not Activated")
 @Composable
-private fun StatusCardNotActivatedPreview() {
-    StatusCard(state = previewHomeScreenState(ksuVersion = null, lkmMode = null), actions = HomeActions({}, {}))
+private fun CoolRanchPanelNotActivatedPreview() {
+    CoolRanchPanel(state = previewHomeScreenState(ksuVersion = null, lkmMode = null), actions = HomeActions({}, {}))
 }
 
 @Preview(name = "Permissive")
 @Composable
-private fun StatusCardPermissivePreview() {
-    StatusCard(
+private fun CoolRanchPanelPermissivePreview() {
+    CoolRanchPanel(
         state = previewHomeScreenState(ksuVersion = null, lkmMode = null, selinuxStatus = "Permissive"),
         actions = HomeActions({}, {})
     )
@@ -520,8 +597,8 @@ private fun StatusCardPermissivePreview() {
 
 @Preview(name = "Jailbreak")
 @Composable
-private fun StatusCardJailbreakPreview() {
-    StatusCard(
+private fun CoolRanchPanelJailbreakPreview() {
+    CoolRanchPanel(
         state = previewHomeScreenState(ksuVersion = 12345, lkmMode = true, isLateLoadMode = true),
         actions = HomeActions({}, {})
     )
@@ -554,7 +631,7 @@ private fun HomeScreenPreviewContent(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             val actions = HomeActions({}, {})
-            StatusCard(
+            CoolRanchPanel(
                 state = previewHomeScreenState(
                     ksuVersion = ksuVersion,
                     lkmMode = lkmMode,
@@ -613,8 +690,6 @@ private fun previewHomeScreenState(
     isRootAvailable = ksuVersion != null,
     isSafeMode = isSafeMode,
     isLateLoadMode = isLateLoadMode,
-    checkUpdateEnabled = false,
-    latestVersionInfo = me.weishu.kernelsu.ui.util.module.LatestVersionInfo(),
     currentManagerVersionCode = 10000,
     systemInfo = previewSystemInfo.copy(selinuxStatus = selinuxStatus),
     kernelUAPIVersion = 1,

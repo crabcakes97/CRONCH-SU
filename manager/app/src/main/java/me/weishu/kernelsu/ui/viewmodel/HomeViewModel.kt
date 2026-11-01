@@ -13,23 +13,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.weishu.kernelsu.BuildConfig
 import me.weishu.kernelsu.Natives
-import me.weishu.kernelsu.data.repository.SettingsRepository
-import me.weishu.kernelsu.data.repository.SettingsRepositoryImpl
 import me.weishu.kernelsu.getKernelVersion
 import me.weishu.kernelsu.ksuApp
 import me.weishu.kernelsu.ui.screen.home.HomeUiState
 import me.weishu.kernelsu.ui.screen.home.SystemInfo
 import me.weishu.kernelsu.ui.screen.home.getManagerVersion
 import me.weishu.kernelsu.ui.util.CronchLog
-import me.weishu.kernelsu.ui.util.checkNewVersion
 import me.weishu.kernelsu.ui.util.getSELinuxStatusRaw
-import me.weishu.kernelsu.ui.util.module.LatestVersionInfo
 import me.weishu.kernelsu.ui.util.resolveDeviceName
 import me.weishu.kernelsu.ui.util.rootAvailable
 
-class HomeViewModel(
-    private val settingsRepo: SettingsRepository = SettingsRepositoryImpl()
-) : ViewModel() {
+class HomeViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(buildState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -38,20 +32,6 @@ class HomeViewModel(
         viewModelScope.launch {
             val baseState = withContext(Dispatchers.IO) { buildState() }
             _uiState.update { baseState }
-            if (baseState.checkUpdateEnabled) {
-                val latestVersionInfo = withContext(Dispatchers.IO) { checkNewVersion() }
-                _uiState.update { it.copy(latestVersionInfo = latestVersionInfo) }
-                // checkNewVersion returns a blank LatestVersionInfo (version
-                // code 0) when offline or the request fails — say so honestly
-                // instead of reporting a version number that was never read.
-                if (latestVersionInfo.versionCode == 0) {
-                    CronchLog.log("Update", "update check unavailable (offline or request failed)")
-                } else if (latestVersionInfo.versionCode > baseState.currentManagerVersionCode) {
-                    CronchLog.log("Update", "new version ${latestVersionInfo.versionCode} available (current ${baseState.currentManagerVersionCode})")
-                } else {
-                    CronchLog.log("Update", "up to date (latest ${latestVersionInfo.versionCode}, current ${baseState.currentManagerVersionCode})")
-                }
-            }
         }
     }
 
@@ -94,8 +74,6 @@ class HomeViewModel(
             isRootAvailable = isRootAvailable,
             isSafeMode = Natives.isSafeMode,
             isLateLoadMode = Natives.isLateLoadMode,
-            checkUpdateEnabled = settingsRepo.checkUpdate,
-            latestVersionInfo = LatestVersionInfo(),
             currentManagerVersionCode = managerVersion.versionCode,
             systemInfo = SystemInfo(
                 kernelVersion = Os.uname().release,

@@ -48,7 +48,10 @@ fun MiuixKernelSUTheme(
             if (darkTheme) dynamicDarkColorScheme(context).primary
             else dynamicLightColorScheme(context).primary
 
-        else -> null
+        // No custom key and no Monet: Dorito orange, never the system
+        // default grey. The twenty flavor presets set a key color of
+        // their own and never reach this branch.
+        else -> CronchDoritoOrange
     }
 
     val controller = ThemeController(

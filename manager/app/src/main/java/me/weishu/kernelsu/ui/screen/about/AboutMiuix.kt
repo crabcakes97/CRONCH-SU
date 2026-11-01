@@ -60,6 +60,7 @@ import kotlinx.coroutines.flow.onEach
 import me.weishu.kernelsu.R
 import me.weishu.kernelsu.ui.component.miuix.effect.BgEffectBackground
 import me.weishu.kernelsu.ui.component.miuix.effect.ColorBlendToken
+import me.weishu.kernelsu.ui.theme.CronchDisplayFontFamily
 import me.weishu.kernelsu.ui.theme.LocalEnableBlur
 import me.weishu.kernelsu.ui.theme.isInDarkTheme
 import me.weishu.kernelsu.ui.util.BlurredBar
@@ -446,8 +447,9 @@ private fun AboutContent(
                             )
                         }
                     }
-                    // Serious note (the only serious-toned addition in the
-                    // app): Magisk Next shout-out. Plain text, no lore.
+                    // Shout-outs live inside the lore-locked app; the facts
+                    // in them are not jokes. Then the Accord, then the
+                    // motto verbatim as the closing line, as ordered.
                     Text(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -466,6 +468,26 @@ private fun AboutContent(
                         color = colorScheme.onSurfaceVariantSummary,
                         text = stringResource(R.string.cronch_chainfire_tribute),
                         fontSize = 12.sp,
+                        textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 12.dp),
+                        color = colorScheme.onSurfaceVariantSummary,
+                        text = stringResource(R.string.cronch_accord_note),
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 12.dp),
+                        color = colorScheme.primary,
+                        text = stringResource(R.string.cronch_motto),
+                        fontFamily = CronchDisplayFontFamily,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
                     )
                     Spacer(

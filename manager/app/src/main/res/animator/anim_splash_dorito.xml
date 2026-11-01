@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="1000"
+    android:interpolator="@android:interpolator/linear"
+    android:valueType="floatType">
+    <propertyValuesHolder android:propertyName="rotation">
+        <keyframe android:fraction="0" android:value="-160" />
+        <keyframe android:fraction="0.68" android:value="-160" />
+        <keyframe android:fraction="0.8" android:value="12" />
+        <keyframe android:fraction="0.88" android:value="-4" />
+        <keyframe android:fraction="0.95" android:value="0" />
+        <keyframe android:fraction="1" android:value="0" />
+    </propertyValuesHolder>
+    <propertyValuesHolder android:propertyName="scaleX">
+        <keyframe android:fraction="0" android:value="0" />
+        <keyframe android:fraction="0.68" android:value="0" />
+        <keyframe android:fraction="0.78" android:value="1.3" />
+        <keyframe android:fraction="0.86" android:value="0.92" />
+        <keyframe android:fraction="0.94" android:value="1" />
+        <keyframe android:fraction="1" android:value="1" />
+    </propertyValuesHolder>
+    <propertyValuesHolder android:propertyName="scaleY">
+        <keyframe android:fraction="0" android:value="0" />
+        <keyframe android:fraction="0.68" android:value="0" />
+        <keyframe android:fraction="0.78" android:value="1.3" />
+        <keyframe android:fraction="0.86" android:value="0.92" />
+        <keyframe android:fraction="0.94" android:value="1" />
+        <keyframe android:fraction="1" android:value="1" />
+    </propertyValuesHolder>
+</objectAnimator>

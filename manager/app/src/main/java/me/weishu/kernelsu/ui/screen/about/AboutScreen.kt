@@ -36,6 +36,10 @@ fun AboutScreen() {
                 fullText = stringResource(R.string.cronch_credit_upstream),
                 url = "https://github.com/tiann/KernelSU",
             ),
+            LinkInfo(
+                fullText = stringResource(R.string.cronch_credit_next),
+                url = "https://github.com/KernelSU-Next/KernelSU-Next",
+            ),
         ),
     )
     val actions = AboutScreenActions(

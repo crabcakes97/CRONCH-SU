@@ -119,7 +119,7 @@ class MainActivity : ComponentActivity() {
     private val intentChannel = Channel<Intent>(capacity = Channel.BUFFERED)
     private var contentReady = false
     private var splashStartedAt = 0L
-    private val splashAnimationDurationMs = 500L
+    private val splashAnimationDurationMs = 1000L
 
 
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")

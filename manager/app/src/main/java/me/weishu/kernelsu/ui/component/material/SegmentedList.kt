@@ -71,6 +71,7 @@ import androidx.compose.ui.unit.round
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import me.weishu.kernelsu.ui.theme.CronchDisplayFontFamily
 
 val LocalListItemShapes = compositionLocalOf<ListItemShapes?> { null }
 private val SegmentedOuterRadius = 16.dp
@@ -111,7 +112,9 @@ fun SegmentedColumn(
         if (title.isNotEmpty()) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleSmallEmphasized,
+                style = MaterialTheme.typography.titleSmallEmphasized.copy(
+                    fontFamily = CronchDisplayFontFamily
+                ),
                 color = colorScheme.primary,
                 modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
             )
@@ -163,7 +166,9 @@ fun SegmentedColumn(
         if (title.isNotEmpty()) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleSmallEmphasized,
+                style = MaterialTheme.typography.titleSmallEmphasized.copy(
+                    fontFamily = CronchDisplayFontFamily
+                ),
                 color = colorScheme.primary,
                 modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
             )

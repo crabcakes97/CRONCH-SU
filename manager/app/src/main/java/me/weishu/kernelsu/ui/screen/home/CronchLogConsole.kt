@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -39,9 +40,13 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import me.weishu.kernelsu.R
+import me.weishu.kernelsu.ui.theme.CronchDisplayFontFamily
+import me.weishu.kernelsu.ui.theme.CronchDoritoOrange
+import me.weishu.kernelsu.ui.theme.CronchLogShape
+import me.weishu.kernelsu.ui.theme.cronchLogContentColor
+import me.weishu.kernelsu.ui.theme.cronchLogSurfaceColor
 import me.weishu.kernelsu.ui.theme.isInDarkTheme
 import me.weishu.kernelsu.ui.util.CronchLog
-import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 
 /**
  * The Coop log: a verbose, scrolling console pinned at the top of the home
@@ -50,28 +55,36 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
  * auto-follow pauses and a "Latest" button appears to jump back down.
  * Rainbow lettering is the default (persisted toggle in the header).
  *
- * Two thin wrappers supply theme-appropriate colors because the app has two
- * UI modes; the core below takes explicit colors so it renders correctly
- * under either theme.
+ * Layout rule, learned the hard way: the title NEVER shares a Row with
+ * the controls. Title on its own full-width line, subtitle under it,
+ * controls on their own row, Latest on its own right-aligned row when
+ * it appears. No title can ever collapse to a sliver again.
+ *
+ * Log LINES stay exactly as the code emits them (timestamps, tags,
+ * status facts) -- only this chrome is lore. Two thin wrappers supply
+ * theme-appropriate colors because the app has two UI modes; the core
+ * below takes explicit colors so it renders correctly under either.
  */
 @Composable
 fun CronchLogConsoleMaterial(modifier: Modifier = Modifier) {
+    val isDark = isInDarkTheme()
     CronchLogConsole(
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        mutedColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        accentColor = MaterialTheme.colorScheme.primary,
+        containerColor = cronchLogSurfaceColor(isDark),
+        contentColor = cronchLogContentColor(isDark),
+        mutedColor = cronchLogContentColor(isDark).copy(alpha = 0.7f),
+        accentColor = CronchDoritoOrange,
         modifier = modifier,
     )
 }
 
 @Composable
 fun CronchLogConsoleMiuix(modifier: Modifier = Modifier) {
+    val isDark = isInDarkTheme()
     CronchLogConsole(
-        containerColor = colorScheme.surface,
-        contentColor = colorScheme.onBackground,
-        mutedColor = colorScheme.onSurfaceVariantSummary,
-        accentColor = colorScheme.primary,
+        containerColor = cronchLogSurfaceColor(isDark),
+        contentColor = cronchLogContentColor(isDark),
+        mutedColor = cronchLogContentColor(isDark).copy(alpha = 0.7f),
+        accentColor = CronchDoritoOrange,
         modifier = modifier,
     )
 }
@@ -113,36 +126,41 @@ private fun CronchLogConsole(
 
     Card(
         modifier = modifier.fillMaxWidth(),
+        shape = CronchLogShape,
         colors = CardDefaults.cardColors(
             containerColor = containerColor,
             contentColor = contentColor,
         ),
     ) {
-        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+            // Title: full width, its own line, never squeezed.
+            Text(
+                text = stringResource(R.string.cronch_log_title),
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontFamily = CronchDisplayFontFamily
+                ),
+                color = contentColor,
+                maxLines = 1,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Text(
+                text = stringResource(R.string.cronch_log_subtitle),
+                style = MaterialTheme.typography.bodySmall,
+                color = mutedColor,
+                maxLines = 2,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 2.dp),
+            )
+            // Controls: their own row. Rainbow + switch on the left,
+            // Burn It / Steal It on the right. Nothing else competes.
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp),
             ) {
-                Text(
-                    text = stringResource(R.string.cronch_log_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = contentColor,
-                    modifier = Modifier.weight(1f),
-                )
-                if (!atBottom && entries.isNotEmpty()) {
-                    TextButton(
-                        onClick = {
-                            scope.launch {
-                                runCatching { listState.animateScrollToItem(entries.lastIndex) }
-                            }
-                        },
-                    ) {
-                        Text(
-                            text = stringResource(R.string.cronch_log_latest),
-                            color = accentColor,
-                        )
-                    }
-                }
                 Text(
                     text = stringResource(R.string.cronch_log_rainbow),
                     style = MaterialTheme.typography.bodySmall,
@@ -162,6 +180,7 @@ private fun CronchLogConsole(
                         uncheckedBorderColor = mutedColor,
                     ),
                 )
+                Spacer(modifier = Modifier.weight(1f))
                 TextButton(
                     onClick = { CronchLog.clear() },
                 ) {
@@ -179,6 +198,55 @@ private fun CronchLogConsole(
                     )
                 }
             }
+            // Latest: its own right-aligned row, only when scrolled up.
+            if (!atBottom && entries.isNotEmpty()) {
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    TextButton(
+                        onClick = {
+                            scope.launch {
+                                runCatching { listState.animateScrollToItem(entries.lastIndex) }
+                            }
+                        },
+                    ) {
+                        Text(
+                            text = stringResource(R.string.cronch_log_latest),
+                            color = accentColor,
+                        )
+                    }
+                }
+            }
+            // Column headers: WHEN / WHO / WHAT, aligned with the rows.
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp, bottom = 2.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.cronch_log_col_time),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = mutedColor,
+                    maxLines = 1,
+                    modifier = Modifier.width(58.dp),
+                )
+                Text(
+                    text = stringResource(R.string.cronch_log_col_tag),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = mutedColor,
+                    maxLines = 1,
+                    modifier = Modifier.width(64.dp),
+                )
+                Text(
+                    text = stringResource(R.string.cronch_log_col_msg),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = mutedColor,
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f),
+                )
+            }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -194,18 +262,46 @@ private fun CronchLogConsole(
                 } else {
                     LazyColumn(state = listState) {
                         items(entries, key = { it.seq }) { entry ->
-                            Text(
-                                text = "[${CronchLog.formatTime(entry.timeMillis)}] [${entry.tag}] ${entry.message}",
-                                color = if (rainbow) CronchLog.rainbowColor(entry, isDark) else contentColor,
-                                fontFamily = FontFamily.Monospace,
-                                fontSize = 11.sp,
-                                lineHeight = 15.sp,
-                            )
+                            val lineColor =
+                                if (rainbow) CronchLog.rainbowColor(entry, isDark) else contentColor
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 2.dp),
+                            ) {
+                                Text(
+                                    text = CronchLog.formatTime(entry.timeMillis),
+                                    color = lineColor,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 11.sp,
+                                    lineHeight = 15.sp,
+                                    maxLines = 1,
+                                    modifier = Modifier.width(58.dp),
+                                )
+                                Text(
+                                    text = entry.tag,
+                                    color = lineColor,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 11.sp,
+                                    lineHeight = 15.sp,
+                                    maxLines = 1,
+                                    modifier = Modifier.width(64.dp),
+                                )
+                                Text(
+                                    text = entry.message,
+                                    color = lineColor,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 11.sp,
+                                    lineHeight = 15.sp,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
                         }
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = stringResource(R.string.cronch_log_footer, entries.size, CronchLog.MAX_LINES),
                 style = MaterialTheme.typography.bodySmall,

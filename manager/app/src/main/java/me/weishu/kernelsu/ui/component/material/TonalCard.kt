@@ -15,13 +15,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 
+import me.weishu.kernelsu.ui.theme.CronchCardShape
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TonalCard(
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.surfaceBright,
     contentColor: Color = contentColorFor(containerColor),
-    shape: Shape = MaterialTheme.shapes.large,
+    shape: Shape = CronchCardShape,
     enabled: Boolean = true,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,

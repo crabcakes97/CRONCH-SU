@@ -26,6 +26,66 @@ fun ColorScheme.amoledBackground(amoled: Boolean): ColorScheme =
         surfaceContainerHighest = Color.Black,
     )
 
+/** Linear blend of two opaque colors; t=0 is [a], t=1 is [b]. */
+private fun cronchBlend(a: Color, b: Color, t: Float): Color =
+    Color(
+        red = a.red + (b.red - a.red) * t,
+        green = a.green + (b.green - a.green) * t,
+        blue = a.blue + (b.blue - a.blue) * t,
+        alpha = 1f,
+    )
+
+/**
+ * CRONCH-ify a generated scheme: backgrounds and surfaces become ranch
+ * cream (light) or charred coop brown (dark), tinted toward the seed
+ * color, so no surface in the app reads as stock grey. The seed-derived
+ * primary/secondary/tertiary and all on-colors are left exactly as the
+ * generator produced them, so the twenty flavor themes and their contrast
+ * guarantees survive. Applied before the animation wrapper, which copies
+ * every field through.
+ */
+fun ColorScheme.cronchified(isDark: Boolean): ColorScheme {
+    val cream = CronchRanchCream
+    val charred = CronchRanchCreamDark
+    return if (isDark) {
+        val bg = cronchBlend(charred, primary, 0.08f)
+        copy(
+            background = bg,
+            surface = cronchBlend(charred, primary, 0.12f),
+            surfaceVariant = cronchBlend(charred, primary, 0.18f),
+            surfaceDim = cronchBlend(charred, primary, 0.05f),
+            surfaceBright = cronchBlend(charred, primary, 0.22f),
+            surfaceContainerLowest = cronchBlend(charred, primary, 0.05f),
+            surfaceContainerLow = cronchBlend(charred, primary, 0.10f),
+            surfaceContainer = cronchBlend(charred, primary, 0.14f),
+            surfaceContainerHigh = cronchBlend(charred, primary, 0.19f),
+            surfaceContainerHighest = cronchBlend(charred, primary, 0.25f),
+            onBackground = CronchRanchCream,
+            onSurface = CronchRanchCream,
+            outline = cronchBlend(CronchMoaiStone, primary, 0.25f),
+            outlineVariant = cronchBlend(CronchMoaiStone, primary, 0.15f),
+        )
+    } else {
+        val bg = cronchBlend(cream, primary, 0.04f)
+        copy(
+            background = bg,
+            surface = cronchBlend(cream, primary, 0.06f),
+            surfaceVariant = cronchBlend(cream, primary, 0.12f),
+            surfaceDim = cronchBlend(cream, primary, 0.10f),
+            surfaceBright = cronchBlend(Color.White, primary, 0.05f),
+            surfaceContainerLowest = cronchBlend(Color.White, primary, 0.03f),
+            surfaceContainerLow = cronchBlend(cream, primary, 0.08f),
+            surfaceContainer = cronchBlend(cream, primary, 0.11f),
+            surfaceContainerHigh = cronchBlend(cream, primary, 0.15f),
+            surfaceContainerHighest = cronchBlend(cream, primary, 0.20f),
+            onBackground = CronchCoopBrown,
+            onSurface = CronchCoopBrown,
+            outline = cronchBlend(CronchMoaiStone, primary, 0.25f),
+            outlineVariant = cronchBlend(CronchMoaiStone, primary, 0.15f),
+        )
+    }
+}
+
 @Composable
 fun rememberKernelSUColorScheme(
     seedColor: Color,

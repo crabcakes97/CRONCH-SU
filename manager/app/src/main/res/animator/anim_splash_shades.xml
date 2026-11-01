@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="1000"
+    android:interpolator="@android:interpolator/linear"
+    android:valueType="floatType">
+    <propertyValuesHolder android:propertyName="scaleX">
+        <keyframe android:fraction="0" android:value="0.2" />
+        <keyframe android:fraction="0.55" android:value="0.2" />
+        <keyframe android:fraction="0.63" android:value="1.35" />
+        <keyframe android:fraction="0.7" android:value="0.92" />
+        <keyframe android:fraction="0.78" android:value="1" />
+        <keyframe android:fraction="1" android:value="1" />
+    </propertyValuesHolder>
+    <propertyValuesHolder android:propertyName="scaleY">
+        <keyframe android:fraction="0" android:value="0.2" />
+        <keyframe android:fraction="0.55" android:value="0.2" />
+        <keyframe android:fraction="0.63" android:value="1.35" />
+        <keyframe android:fraction="0.7" android:value="0.92" />
+        <keyframe android:fraction="0.78" android:value="1" />
+        <keyframe android:fraction="1" android:value="1" />
+    </propertyValuesHolder>
+    <propertyValuesHolder android:propertyName="translateY">
+        <keyframe android:fraction="0" android:value="-30" />
+        <keyframe android:fraction="0.55" android:value="-30" />
+        <keyframe android:fraction="0.63" android:value="0" />
+        <keyframe android:fraction="0.7" android:value="2" />
+        <keyframe android:fraction="0.78" android:value="0" />
+        <keyframe android:fraction="1" android:value="0" />
+    </propertyValuesHolder>
+    <propertyValuesHolder android:propertyName="rotation">
+        <keyframe android:fraction="0" android:value="-18" />
+        <keyframe android:fraction="0.55" android:value="-18" />
+        <keyframe android:fraction="0.63" android:value="4" />
+        <keyframe android:fraction="0.7" android:value="-2" />
+        <keyframe android:fraction="0.78" android:value="0" />
+        <keyframe android:fraction="1" android:value="0" />
+    </propertyValuesHolder>
+</objectAnimator>

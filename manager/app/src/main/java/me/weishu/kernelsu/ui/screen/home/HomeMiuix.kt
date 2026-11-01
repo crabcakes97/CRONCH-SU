@@ -1,10 +1,6 @@
 package me.weishu.kernelsu.ui.screen.home
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,14 +54,19 @@ import me.weishu.kernelsu.KernelVersion
 import me.weishu.kernelsu.Natives
 import me.weishu.kernelsu.R
 import me.weishu.kernelsu.ui.component.WarningLevel
-import me.weishu.kernelsu.ui.component.dialog.rememberConfirmDialog
 import me.weishu.kernelsu.ui.component.miuix.WarningCard
 import me.weishu.kernelsu.ui.component.rebootlistpopup.RebootListPopupMiuix
 import me.weishu.kernelsu.ui.component.statustag.StatusTag
+import me.weishu.kernelsu.ui.theme.CronchDisplayFontFamily
+import me.weishu.kernelsu.ui.theme.CronchDoritoOrange
+import me.weishu.kernelsu.ui.theme.CronchFlavorStripColors
+import me.weishu.kernelsu.ui.theme.CronchGumboRed
+import me.weishu.kernelsu.ui.theme.CronchNachoGold
 import me.weishu.kernelsu.ui.theme.LocalEnableBlur
+import me.weishu.kernelsu.ui.theme.cronchPanelColor
+import me.weishu.kernelsu.ui.theme.cronchPanelContentColor
 import me.weishu.kernelsu.ui.theme.isInDarkTheme
 import me.weishu.kernelsu.ui.util.BlurredBar
-import me.weishu.kernelsu.ui.util.module.LatestVersionInfo
 import me.weishu.kernelsu.ui.util.rememberBlurBackdrop
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
@@ -83,7 +84,6 @@ import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
-import top.yukonga.miuix.kmp.theme.MiuixTheme.isDynamicColor
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
@@ -127,10 +127,8 @@ fun HomePagerMiuix(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
+                        CronchWordmarkMiuix()
                         CronchLogConsoleMiuix(modifier = Modifier.fillMaxWidth())
-                        if (state.checkUpdateEnabled) {
-                            UpdateCard(state = state, actions = actions)
-                        }
                         if (state.showManagerPrBuildWarning) {
                             WarningCard(stringResource(id = R.string.home_pr_build_warning), level = WarningLevel.Notice)
                         } else if (state.showKernelPrBuildWarning) {
@@ -164,7 +162,7 @@ fun HomePagerMiuix(
                         if (state.showRootWarning) {
                             WarningCard(stringResource(id = R.string.grant_root_failed))
                         }
-                        StatusCard(
+                        CoolRanchPanel(
                             state = state,
                             actions = actions,
                         )
@@ -176,6 +174,22 @@ fun HomePagerMiuix(
                             onOpenUrl = actions.onOpenUrl,
                             modifier = Modifier.fillMaxWidth(),
                         )
+                        HonorableMentionsMiuix(
+                            onOpenUrl = actions.onOpenUrl,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.cronch_motto),
+                                fontFamily = CronchDisplayFontFamily,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = colorScheme.primary,
+                            )
+                        }
                         Spacer(
                             Modifier.height(
                                 bottomInnerPadding + if (!Natives.isFullFeatured())
@@ -190,36 +204,25 @@ fun HomePagerMiuix(
 }
 
 @Composable
-private fun UpdateCard(
-    state: HomeUiState,
-    actions: HomeActions,
-) {
-    val newVersion = state.latestVersionInfo
-    val title = stringResource(id = R.string.module_changelog)
-    val updateText = stringResource(id = R.string.module_update)
-    val updateDialog = rememberConfirmDialog(onConfirm = { actions.onOpenUrl(newVersion.downloadUrl) })
-
-    AnimatedVisibility(
-        visible = state.hasUpdate,
-        enter = fadeIn() + expandVertically(),
-        exit = shrinkVertically() + fadeOut()
-    ) {
-        WarningCard(
-            message = stringResource(id = R.string.new_version_available, newVersion.versionCode),
-            level = WarningLevel.Notice,
-            onClick = {
-                if (newVersion.changelog.isEmpty()) {
-                    actions.onOpenUrl(newVersion.downloadUrl)
-                } else {
-                    updateDialog.showConfirm(
-                        title = title,
-                        content = newVersion.changelog,
-                        markdown = true,
-                        confirm = updateText
-                    )
-                }
-            }
+private fun CronchWordmarkMiuix() {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.app_name),
+            fontFamily = CronchDisplayFontFamily,
+            fontSize = 38.sp,
+            fontWeight = FontWeight.Black,
+            color = colorScheme.primary,
         )
+        Row(modifier = Modifier.fillMaxWidth()) {
+            CronchFlavorStripColors.forEach { flavorColor ->
+                Spacer(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(6.dp)
+                        .background(flavorColor)
+                )
+            }
+        }
     }
 }
 
@@ -242,11 +245,18 @@ private fun TopBar(
 }
 
 @Composable
-private fun StatusCard(
+private fun CoolRanchPanel(
     state: HomeUiState,
     actions: HomeActions,
 ) {
-    Column {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.home_cool_ranch_panel),
+            fontFamily = CronchDisplayFontFamily,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = CronchDoritoOrange,
+        )
         when {
             state.ksuVersion != null -> {
                 val workingState = buildString {
@@ -273,10 +283,8 @@ private fun StatusCard(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.defaultColors(
-                            color = when {
-                                isDynamicColor -> colorScheme.secondaryContainer
-                                else -> colorScheme.primaryContainer
-                            }
+                            color = cronchPanelColor(isInDarkTheme()),
+                            contentColor = cronchPanelContentColor(isInDarkTheme()),
                         ),
                         onClick = {
                             if (!state.isLateLoadMode) {
@@ -340,8 +348,8 @@ private fun StatusCard(
                                             Spacer(Modifier.width(8.dp))
                                             StatusTag(
                                                 label = stringResource(R.string.home_lkm_custom),
-                                                contentColor = colorScheme.onTertiaryContainer,
-                                                backgroundColor = colorScheme.tertiaryContainer,
+                                                contentColor = CronchGumboRed,
+                                                backgroundColor = CronchNachoGold,
                                             )
                                         }
                                     }
@@ -356,6 +364,10 @@ private fun StatusCard(
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Card(
                         modifier = Modifier.weight(1f),
+                        colors = CardDefaults.defaultColors(
+                            color = cronchPanelColor(isInDarkTheme()),
+                            contentColor = cronchPanelContentColor(isInDarkTheme()),
+                        ),
                         onClick = {
                             if (!state.isLateLoadMode) {
                                 actions.onInstallClick()
@@ -391,6 +403,10 @@ private fun StatusCard(
 
             else -> {
                 Card(
+                    colors = CardDefaults.defaultColors(
+                        color = cronchPanelColor(isInDarkTheme()),
+                        contentColor = cronchPanelContentColor(isInDarkTheme()),
+                    ),
                     onClick = {
                         if (!state.isLateLoadMode) {
                             actions.onInstallClick()
@@ -424,7 +440,13 @@ private fun SupportLinks(
 ) {
     val learnMoreUrl = stringResource(R.string.home_learn_kernelsu_url)
 
-    Card(modifier = modifier) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.defaultColors(
+            color = cronchPanelColor(isInDarkTheme()),
+            contentColor = cronchPanelContentColor(isInDarkTheme()),
+        ),
+    ) {
         ArrowPreference(
             title = stringResource(R.string.home_support_title),
             summary = stringResource(R.string.home_support_content),
@@ -455,6 +477,81 @@ private fun SupportLinks(
 }
 
 @Composable
+private fun HonorableMentionsMiuix(
+    onOpenUrl: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.cronch_honorable_mentions),
+            fontFamily = CronchDisplayFontFamily,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = CronchDoritoOrange,
+        )
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.defaultColors(
+                color = cronchPanelColor(isInDarkTheme()),
+                contentColor = cronchPanelContentColor(isInDarkTheme()),
+            ),
+        ) {
+            ArrowPreference(
+                title = stringResource(R.string.cronch_credit_fork),
+                startAction = {
+                    Icon(
+                        imageVector = Icons.Filled.VolunteerActivism,
+                        contentDescription = stringResource(R.string.cronch_credit_fork),
+                        modifier = Modifier.padding(end = 6.dp),
+                        tint = colorScheme.onBackground,
+                    )
+                },
+                onClick = { onOpenUrl("https://github.com/crabcakes97") },
+            )
+            ArrowPreference(
+                title = stringResource(R.string.cronch_credit_upstream),
+                startAction = {
+                    Icon(
+                        imageVector = Icons.Filled.Tag,
+                        contentDescription = stringResource(R.string.cronch_credit_upstream),
+                        modifier = Modifier.padding(end = 6.dp),
+                        tint = colorScheme.onBackground,
+                    )
+                },
+                onClick = { onOpenUrl("https://github.com/tiann/KernelSU") },
+            )
+            ArrowPreference(
+                title = stringResource(R.string.cronch_credit_next),
+                startAction = {
+                    Icon(
+                        imageVector = Icons.Filled.DeveloperBoard,
+                        contentDescription = stringResource(R.string.cronch_credit_next),
+                        modifier = Modifier.padding(end = 6.dp),
+                        tint = colorScheme.onBackground,
+                    )
+                },
+                onClick = { onOpenUrl("https://github.com/KernelSU-Next/KernelSU-Next") },
+            )
+            Text(
+                text = stringResource(R.string.cronch_magisk_next_note),
+                fontSize = 12.sp,
+                color = colorScheme.onSurfaceVariantSummary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+            Text(
+                text = stringResource(R.string.cronch_chainfire_tribute),
+                fontSize = 12.sp,
+                color = colorScheme.onSurfaceVariantSummary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+        }
+    }
+}
+
+@Composable
 private fun InfoCard(
     systemInfo: SystemInfo,
     modifier: Modifier = Modifier,
@@ -478,7 +575,7 @@ private fun InfoCard(
                 modifier = Modifier
                     .padding(end = 12.dp)
                     .size(24.dp),
-                tint = colorScheme.primary,
+                tint = CronchDoritoOrange,
             )
             Column {
                 Text(
@@ -522,7 +619,13 @@ private fun InfoCard(
             color = colorScheme.primary,
             modifier = Modifier.padding(start = 4.dp),
         )
-        Card(modifier = Modifier.fillMaxWidth()) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.defaultColors(
+                color = cronchPanelColor(isInDarkTheme()),
+                contentColor = cronchPanelContentColor(isInDarkTheme()),
+            ),
+        ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 InfoText(
                     icon = Icons.Filled.Tag,
@@ -547,7 +650,13 @@ private fun InfoCard(
                 )
             }
         }
-        Card(modifier = Modifier.fillMaxWidth()) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.defaultColors(
+                color = cronchPanelColor(isInDarkTheme()),
+                contentColor = cronchPanelContentColor(isInDarkTheme()),
+            ),
+        ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 InfoText(
                     icon = Icons.Filled.Security,
@@ -567,8 +676,8 @@ private fun InfoCard(
 
 @Preview(name = "Activated")
 @Composable
-private fun StatusCardActivatedPreview() {
-    StatusCard(
+private fun CoolRanchPanelActivatedPreview() {
+    CoolRanchPanel(
         state = previewHomeScreenState(ksuVersion = 12345, lkmMode = true),
         actions = HomeActions({}, {})
     )
@@ -576,14 +685,14 @@ private fun StatusCardActivatedPreview() {
 
 @Preview(name = "Not Activated")
 @Composable
-private fun StatusCardNotActivatedPreview() {
-    StatusCard(state = previewHomeScreenState(ksuVersion = null, lkmMode = null), actions = HomeActions({}, {}))
+private fun CoolRanchPanelNotActivatedPreview() {
+    CoolRanchPanel(state = previewHomeScreenState(ksuVersion = null, lkmMode = null), actions = HomeActions({}, {}))
 }
 
 @Preview(name = "Permissive")
 @Composable
-private fun StatusCardPermissivePreview() {
-    StatusCard(
+private fun CoolRanchPanelPermissivePreview() {
+    CoolRanchPanel(
         state = previewHomeScreenState(ksuVersion = null, lkmMode = null, selinuxStatus = "Permissive"),
         actions = HomeActions({}, {})
     )
@@ -591,8 +700,8 @@ private fun StatusCardPermissivePreview() {
 
 @Preview(name = "Jailbreak")
 @Composable
-private fun StatusCardJailbreakPreview() {
-    StatusCard(
+private fun CoolRanchPanelJailbreakPreview() {
+    CoolRanchPanel(
         state = previewHomeScreenState(ksuVersion = 12345, lkmMode = true, isLateLoadMode = true),
         actions = HomeActions({}, {})
     )
@@ -626,7 +735,7 @@ private fun HomeScreenPreviewContent(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             val actions = HomeActions({}, {})
-            StatusCard(
+            CoolRanchPanel(
                 state = previewHomeScreenState(
                     ksuVersion = ksuVersion,
                     lkmMode = lkmMode,
@@ -691,8 +800,6 @@ private fun previewHomeScreenState(
     isRootAvailable = ksuVersion != null,
     isSafeMode = isSafeMode,
     isLateLoadMode = isLateLoadMode,
-    checkUpdateEnabled = false,
-    latestVersionInfo = LatestVersionInfo(),
     currentManagerVersionCode = 10000,
     systemInfo = previewSystemInfo.copy(selinuxStatus = selinuxStatus),
     kernelUAPIVersion = 1,

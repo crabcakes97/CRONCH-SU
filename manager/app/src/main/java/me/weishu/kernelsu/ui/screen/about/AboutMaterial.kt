@@ -17,7 +17,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.FixedScale
 import androidx.compose.ui.res.painterResource
@@ -39,6 +37,10 @@ import me.weishu.kernelsu.ui.component.material.SegmentedColumn
 import me.weishu.kernelsu.ui.component.material.SegmentedListItem
 import me.weishu.kernelsu.ui.component.material.TopBarBackButton
 import me.weishu.kernelsu.ui.component.material.expressiveTopAppBarColors
+import me.weishu.kernelsu.ui.theme.CronchCardShape
+import me.weishu.kernelsu.ui.theme.CronchDisplayFontFamily
+import me.weishu.kernelsu.ui.theme.CronchDoritoOrange
+import me.weishu.kernelsu.ui.theme.CronchRanchCream
 
 @Composable
 fun AboutScreenMaterial(
@@ -77,8 +79,8 @@ fun AboutScreenMaterial(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
                             .size(80.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color.White)
+                            .clip(CronchCardShape)
+                            .background(CronchRanchCream)
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.ic_launcher_foreground),
@@ -123,8 +125,10 @@ fun AboutScreenMaterial(
                     )
                 )
             }
-            // Serious note (the only serious-toned addition in the app):
-            // Magisk Next shout-out. Plain body text, no lore, no emoji.
+            // Shout-outs live inside the lore-locked app; the facts in
+            // them are not jokes. Magisk Next note first, then Chainfire,
+            // then the MoaiNet-CRONCH Accord, then the motto verbatim
+            // as the closing line, exactly as Kyle ordered.
             item {
                 Text(
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
@@ -140,6 +144,25 @@ fun AboutScreenMaterial(
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
                     text = stringResource(R.string.cronch_chainfire_tribute),
                     fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            item {
+                Text(
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                    text = stringResource(R.string.cronch_accord_note),
+                    fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            item {
+                Text(
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                    text = stringResource(R.string.cronch_motto),
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontFamily = CronchDisplayFontFamily
+                    ),
+                    color = CronchDoritoOrange,
                     textAlign = TextAlign.Center,
                 )
             }
