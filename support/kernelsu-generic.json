@@ -1,1 +1,1 @@
-{"generic":[{"daemon":{"sha256":"dff8ac73e6b600e9fb5e8f9800fadd828008aa0c280034b918dfe68c0807bb6c","size":5222992,"url":"https://raw.githubusercontent.com/crabcakes97/CRONCH-SU/main/support/ksud-cronchsu"},"flavor":"kernelsu","kmis":["android15-6.6"],"susfs":false}],"schemaVersion":1}
+{"generic":[{"daemon":{"sha256":"b6d40c51f7355cfaae16d78ec4a1bcc79f226b384561ffda7fa8233abbc2e7ec","size":5528464,"url":"https://raw.githubusercontent.com/crabcakes97/CRONCH-SU/main/support/ksud-cronchsu"},"flavor":"kernelsu","kmis":["android15-6.6"],"susfs":false}],"schemaVersion":1}
