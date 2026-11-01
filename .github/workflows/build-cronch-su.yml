@@ -26,12 +26,19 @@
 # own parser errors on v3 signatures too. The verify step below enforces
 # v1+v2 only plus the exact certificate fingerprint.
 #
+# The Normalize signing step re-signs the built APK with apksigner and the
+# pinned keystore (v1+v2 only). This guarantees the shipped artifact meets
+# the crown requirements no matter what AGP's debug signing config did on
+# the runner (AGP may leave v3 on despite the injected properties). It is
+# a no-op when the build already signed exactly this way: same key, same
+# schemes, same certificate.
+#
 # Usage: push to the main branch (or run it by hand from Actions ->
 # "Build Cronch SU" -> Run workflow), then download the
-# "cronch-su-debug-apk" artifact. Uninstall any release-signed KernelSU
-# manager first: a debug-signed build cannot update over it. The app
-# label is "Cronch SU" via -PKSU_NAME; the package id stays
-# me.weishu.kernelsu on purpose, the kernel side crowns by it.
+# "cronch-su-debug-apk" artifact. Uninstall any Cronch SU build signed
+# with a different key first: Android refuses to update across
+# certificates. The app label is "Cronch SU" via -PKSU_NAME; the package
+# id stays me.weishu.kernelsu on purpose, the kernel side crowns by it.
 
 name: Build Cronch SU
 
@@ -90,19 +97,37 @@ jobs:
       - name: Build debug APK
         run: ./gradlew clean :app:assembleDebug -PKSU_NAME="Cronch SU" -Pandroid.injected.signing.v3-enabled=false -Pandroid.injected.signing.v4-enabled=false --stacktrace
 
+      # Guarantee v1+v2-only signing with the pinned key, whatever AGP did.
+      # Finds apksigner robustly and records its path for the verify step.
+      - name: Normalize signing (v1+v2 only, pinned key)
+        run: |
+          APK=$(ls app/build/outputs/apk/debug/*.apk | head -n1)
+          echo "APK: $APK"
+          APKSIGNER=$(command -v apksigner || find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}" /usr/local/lib/android/sdk /opt/android-sdk "$HOME/Android/Sdk" -name apksigner -type f 2>/dev/null | head -n1)
+          test -n "$APKSIGNER" || { echo "ERROR: apksigner not found; ANDROID_HOME=${ANDROID_HOME:-unset} ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-unset}"; exit 1; }
+          echo "APKSIGNER: $APKSIGNER"
+          echo "$APKSIGNER" > /tmp/apksigner_path.txt
+          echo "APKSIGNER_PATH=$APKSIGNER" >> "$GITHUB_ENV"
+          echo "--- schemes before normalize ---"
+          "$APKSIGNER" verify --verbose "$APK" || true
+          "$APKSIGNER" sign --ks "$GITHUB_WORKSPACE/debug.keystore" --ks-pass pass:android --key-pass pass:android --ks-key-alias androiddebugkey --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled false --v4-signing-enabled false --out "$APK.normalized" "$APK"
+          mv "$APK.normalized" "$APK"
+          echo "--- schemes after normalize ---"
+          "$APKSIGNER" verify --verbose "$APK"
+
       # The crown check needs v1+v2 only and this exact certificate.
-      # Fails the run if either condition is not met.
+      # Dumps the full outputs on failure so the cause is visible in the log.
       - name: Verify signing certificate
         run: |
           APK=$(ls app/build/outputs/apk/debug/*.apk | head -n1)
           echo "APK: $APK"
-          keytool -printcert -jarfile "$APK" | tee /tmp/cert.txt
-          grep -q "SHA256: 4F:3C:C4:B4:7A:63:A9:D5:A9:71:AB:86:51:6B:DF:D4:C2:AE:3D:B7:E1:16:BE:30:A1:05:3F:28:68:DF:03:24" /tmp/cert.txt || { echo "ERROR: APK certificate does not match the pinned debug key."; exit 1; }
-          APKSIGNER=$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}" -name apksigner -type f 2>/dev/null | head -n1)
+          APKSIGNER="${APKSIGNER_PATH:-$(command -v apksigner || find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}" -name apksigner -type f 2>/dev/null | head -n1)}"
           test -n "$APKSIGNER" || { echo "ERROR: apksigner not found under ANDROID_HOME; cannot verify signature schemes."; exit 1; }
+          keytool -printcert -jarfile "$APK" | tee /tmp/cert.txt
+          grep -q "SHA256: 4F:3C:C4:B4:7A:63:A9:D5:A9:71:AB:86:51:6B:DF:D4:C2:AE:3D:B7:E1:16:BE:30:A1:05:3F:28:68:DF:03:24" /tmp/cert.txt || { echo "ERROR: APK certificate does not match the pinned debug key."; echo "--- cert.txt ---"; cat /tmp/cert.txt; exit 1; }
           "$APKSIGNER" verify --verbose "$APK" | tee /tmp/verify.txt
-          grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" /tmp/verify.txt
-          grep -q "Verified using v3 scheme (APK Signature Scheme v3): false" /tmp/verify.txt
+          grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" /tmp/verify.txt || { echo "ERROR: v2 signature missing."; echo "--- verify.txt ---"; cat /tmp/verify.txt; exit 1; }
+          grep -q "Verified using v3 scheme (APK Signature Scheme v3): false" /tmp/verify.txt || { echo "ERROR: v3 signature present; the kernel crown check rejects v3 blocks."; echo "--- verify.txt ---"; cat /tmp/verify.txt; exit 1; }
 
       # NOTE: defaults.run.working-directory applies to run: steps only,
       # so this path is relative to the repo root, not ./manager.
