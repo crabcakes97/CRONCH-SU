@@ -275,8 +275,7 @@ private fun StatusCard(
                         colors = CardDefaults.defaultColors(
                             color = when {
                                 isDynamicColor -> colorScheme.secondaryContainer
-                                isInDarkTheme() -> Color(0xFF1A3825)
-                                else -> Color(0xFFDFFAE4)
+                                else -> colorScheme.primaryContainer
                             }
                         ),
                         onClick = {
@@ -297,11 +296,7 @@ private fun StatusCard(
                                 Icon(
                                     modifier = Modifier.size(110.dp),
                                     imageVector = Icons.Rounded.CheckCircleOutline,
-                                    tint = if (isDynamicColor) {
-                                        colorScheme.primary.copy(alpha = 0.8f)
-                                    } else {
-                                        Color(0xFF36D167)
-                                    },
+                                    tint = colorScheme.primary.copy(alpha = 0.8f),
                                     contentDescription = null
                                 )
                             }
@@ -345,20 +340,8 @@ private fun StatusCard(
                                             Spacer(Modifier.width(8.dp))
                                             StatusTag(
                                                 label = stringResource(R.string.home_lkm_custom),
-                                                contentColor = if (isDynamicColor) {
-                                                    colorScheme.onTertiaryContainer
-                                                } else if (isInDarkTheme()) {
-                                                    Color(0xFFB8E8C5)
-                                                } else {
-                                                    Color(0xFF164A29)
-                                                },
-                                                backgroundColor = if (isDynamicColor) {
-                                                    colorScheme.tertiaryContainer
-                                                } else if (isInDarkTheme()) {
-                                                    Color(0xFF315D3E)
-                                                } else {
-                                                    Color(0xFFB8E8C5)
-                                                },
+                                                contentColor = colorScheme.onTertiaryContainer,
+                                                backgroundColor = colorScheme.tertiaryContainer,
                                             )
                                         }
                                     }
@@ -495,7 +478,7 @@ private fun InfoCard(
                 modifier = Modifier
                     .padding(end = 12.dp)
                     .size(24.dp),
-                tint = colorScheme.onSurface,
+                tint = colorScheme.primary,
             )
             Column {
                 Text(
@@ -532,6 +515,13 @@ private fun InfoCard(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        Text(
+            text = stringResource(R.string.home_coop_records),
+            fontSize = MiuixTheme.textStyles.headline1.fontSize,
+            fontWeight = FontWeight.SemiBold,
+            color = colorScheme.primary,
+            modifier = Modifier.padding(start = 4.dp),
+        )
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 InfoText(

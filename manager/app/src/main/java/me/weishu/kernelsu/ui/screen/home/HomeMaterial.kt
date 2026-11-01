@@ -201,10 +201,10 @@ private fun StatusCard(
         val ksuActive = state.ksuVersion != null
         val notInstalled = !ksuActive && state.kernelVersion.isGKI()
 
-        val containerColor = if (ksuActive) {
-            MaterialTheme.colorScheme.secondaryContainer
-        } else {
-            MaterialTheme.colorScheme.errorContainer
+        val containerColor = when {
+            ksuActive -> MaterialTheme.colorScheme.primaryContainer
+            notInstalled -> MaterialTheme.colorScheme.tertiaryContainer
+            else -> MaterialTheme.colorScheme.errorContainer
         }
         val contentColor = MaterialTheme.colorScheme.contentColorFor(containerColor)
 
@@ -404,7 +404,13 @@ private fun InfoCard(
         SegmentedListItem(
             modifier = modifier,
             headlineContent = { Text(text = label, style = MaterialTheme.typography.bodyLarge) },
-            leadingContent = { Icon(imageVector = icon, contentDescription = label) },
+            leadingContent = {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = label,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            },
             supportingContent = {
                 Text(
                     text = content,
@@ -433,6 +439,12 @@ private fun InfoCard(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(13.dp),
     ) {
+        Text(
+            text = stringResource(R.string.home_coop_records),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(start = 4.dp, top = 2.dp),
+        )
         SegmentedColumn(modifier = Modifier.fillMaxWidth()) {
             item {
                 InfoCardItem(
