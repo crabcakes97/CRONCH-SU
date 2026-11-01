@@ -394,6 +394,7 @@ fun ColorPaletteScreenMaterial(
 
                         Slider(
                             state = sliderState,
+                            onValueChange = { sliderState.value = it },
                             onValueChangeFinished = { actions.onSetPageScale(sliderState.value) },
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -446,6 +447,7 @@ fun ColorPaletteScreenMaterial(
 
                         Slider(
                             state = sliderState,
+                            onValueChange = { sliderState.value = it },
                             onValueChangeFinished = {
                                 actions.onSetModuleDescriptionMaxLines(sliderState.value.roundToInt())
                             },

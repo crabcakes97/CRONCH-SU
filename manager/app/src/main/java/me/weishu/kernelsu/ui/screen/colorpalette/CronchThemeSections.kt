@@ -478,12 +478,13 @@ private fun CronchCustomColorPickerMiuix(
                 )
             }
             TextButton(
-                text = stringResource(R.string.cronch_custom_color_reset),
                 onClick = {
                     onSetKeyColor(0)
                     onSetCronchThemeId("")
                 },
-            )
+            ) {
+                Text(text = stringResource(R.string.cronch_custom_color_reset))
+            }
         }
     }
 }

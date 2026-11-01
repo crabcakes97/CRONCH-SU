@@ -35,6 +35,7 @@ import me.weishu.kernelsu.data.repository.SettingsRepositoryImpl
 import me.weishu.kernelsu.ksuApp
 import me.weishu.kernelsu.ui.component.SearchStatus
 import me.weishu.kernelsu.ui.screen.module.ModuleConfirmDialogState
+import me.weishu.kernelsu.ui.screen.module.ModuleStatusFilter
 import me.weishu.kernelsu.ui.screen.module.ModuleConfirmRequest
 import me.weishu.kernelsu.ui.screen.module.ModuleEffect
 import me.weishu.kernelsu.ui.screen.module.ModuleUiState

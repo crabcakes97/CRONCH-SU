@@ -83,6 +83,8 @@ fun DeviceInfoMiuix() {
         ).show()
     }
 
+    val sections = deviceInfoSections(state)
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -119,7 +121,7 @@ fun DeviceInfoMiuix() {
                     modifier = Modifier.padding(horizontal = 4.dp),
                 )
             }
-            items(deviceInfoSections(state)) { section ->
+            items(sections) { section ->
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(
                         modifier = Modifier.padding(16.dp),

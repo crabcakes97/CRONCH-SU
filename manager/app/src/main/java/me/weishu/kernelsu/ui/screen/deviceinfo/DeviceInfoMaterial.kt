@@ -89,6 +89,8 @@ fun DeviceInfoMaterial() {
         ).show()
     }
 
+    val sections = deviceInfoSections(state)
+
     ExpressiveScaffold(
         topBar = {
             LargeFlexibleTopAppBar(
@@ -124,7 +126,7 @@ fun DeviceInfoMaterial() {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            items(deviceInfoSections(state)) { section ->
+            items(sections) { section ->
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(
                         modifier = Modifier.padding(16.dp),

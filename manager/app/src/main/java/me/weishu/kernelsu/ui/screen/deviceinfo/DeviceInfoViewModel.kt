@@ -78,10 +78,13 @@ data class DeviceInfoUiState(
             null
         }
     val ramUsageFraction: Float?
-        get() = if (ramTotalBytes != null && ramTotalBytes > 0 && ramUsedBytes != null) {
-            ramUsedBytes.toFloat() / ramTotalBytes.toFloat()
-        } else {
-            null
+        get() {
+            val used = ramUsedBytes
+            return if (ramTotalBytes != null && ramTotalBytes > 0 && used != null) {
+                used.toFloat() / ramTotalBytes.toFloat()
+            } else {
+                null
+            }
         }
     val storageUsageFraction: Float
         get() = if (storageTotalBytes > 0) {
