@@ -213,10 +213,10 @@ Make sure your bootloader is unlocked before proceeding.</string>
     <string name="install_nest_empty_reason">No nests sniffed — the block map hides without the crown, or the slot scroll came back blank. Peck Onward anyway; the kernel chicken picks its own nest.</string>
     <string name="install_flavor_archive_line">The archive holds Original, Alpine Ranch, Louisiana Crab Gumbo, Rotisserie Chicken, Nuclear Ranch for emergencies, Nacho Rebellion, Nacho Ranch, Family Reserve, Emergency Stash, and Mystery CRONCH. The Great Ranch War rages on: Cool Ranch vs Nacho Cheese. The Council has never lost a chip.</string>
     <string name="lateload_chooser_title">Pick the Chip to Late-Load</string>
-    <string name="lateload_option_auto">Original Ranch — the chicken\\'s own bloodline</string>
+    <string name="lateload_option_auto">Original Ranch — the chicken\'s own bloodline</string>
     <string name="lateload_option_auto_summary">The Council sniffs the kernel and pecks the matching chip. No scroll-picking.</string>
     <string name="lateload_option_pick">Raid the Flavor Archive</string>
-    <string name="lateload_option_pick_summary">Choose the bloodline scroll from the Council\\'s stash.</string>
+    <string name="lateload_option_pick_summary">Choose the bloodline scroll from the Council\'s stash.</string>
     <string name="lateload_chooser_footer">CRONCH. PECKS COOL RANCH DORITO 🐔🌮</string>
     <string name="lateload_option_file">Peck a Hand-Picked Scroll</string>
     <string name="lateload_option_file_summary">Choose a .ko scroll from the stash. The Council stages it in the coop and pecks it in as-is.</string>
