@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "generic": [
+    {
+      "flavor": "kernelsu",
+      "kmis": ["android15-6.6"],
+      "daemon": {
+        "url": "https://raw.githubusercontent.com/crabcakes97/CRONCH-SU/main/support/ksud-cronchsu",
+        "size": 5271072,
+        "sha256": "a8b51424af9ec53e0a373dbedef2465fec4fc7c7fc9aefec8e93e2d8f94f770e"
+      },
+      "susfs": false
+    }
+  ]
+}
