@@ -593,6 +593,158 @@ suspend fun getSupportedKmis(): List<String> = withContext(Dispatchers.IO) {
     out.filter { it.isNotBlank() }.map { it.trim() }
 }
 
+private const val LATE_LOAD_KMI_FILE = "magica-kmi"
+private const val LATE_LOAD_KO_FILE = "magica-ko"
+private const val LATE_LOAD_KO_DIR = "lateload"
+private const val MAX_STAGED_KO_BYTES = 16L * 1024 * 1024
+
+/**
+ * What the Magica late-load should peck into the kernel. Auto sniffs the
+ * kernel and loads the matching embedded chip; [Kmi] loads the embedded
+ * chip for that bloodline; [KoFile] loads a hand-picked .ko staged in the
+ * app's files dir. The choice sticks across boots until changed.
+ */
+sealed interface LateLoadChoice {
+    data object Auto : LateLoadChoice
+    data class Kmi(val kmi: String) : LateLoadChoice
+    data class KoFile(val absolutePath: String) : LateLoadChoice
+}
+
+/**
+ * The persisted late-load choice, or [LateLoadChoice.Auto] when nothing
+ * is stored or the stored pick is unreadable. A .ko record whose staged
+ * file is gone falls through to the KMI record, then Auto — a missing
+ * pick never blocks the load, it just sniffs the kernel.
+ */
+suspend fun readLateLoadChoice(): LateLoadChoice = withContext(Dispatchers.IO) {
+    runCatching {
+        val koPath = File(ksuApp.filesDir, LATE_LOAD_KO_FILE).readText().trim()
+        val staged = File(koPath)
+        val stagedDir = File(ksuApp.filesDir, LATE_LOAD_KO_DIR).absolutePath + File.separator
+        val nameOk = staged.name.endsWith(".ko")
+            && staged.name.all { it.isLetterOrDigit() || it == '.' || it == '-' || it == '_' }
+            && !staged.name.contains("..")
+        if (koPath.isNotEmpty() && nameOk && staged.absolutePath.startsWith(stagedDir)
+            && staged.isFile && staged.length() > 0
+        ) {
+            return@withContext LateLoadChoice.KoFile(staged.absolutePath)
+        }
+        val kmi = File(ksuApp.filesDir, LATE_LOAD_KMI_FILE).readText().trim()
+        if (kmi.isNotEmpty()) {
+            return@withContext LateLoadChoice.Kmi(kmi)
+        }
+        LateLoadChoice.Auto
+    }.getOrDefault(LateLoadChoice.Auto)
+}
+
+/**
+ * Persist a late-load choice. The two records are mutually exclusive:
+ * writing one deletes the other, and leaving Auto deletes both plus any
+ * staged .ko, so the preload can never see a stale pick.
+ */
+suspend fun writeLateLoadChoice(choice: LateLoadChoice) = withContext(Dispatchers.IO) {
+    runCatching {
+        val kmiFile = File(ksuApp.filesDir, LATE_LOAD_KMI_FILE)
+        val koFile = File(ksuApp.filesDir, LATE_LOAD_KO_FILE)
+        when (choice) {
+            is LateLoadChoice.Auto -> {
+                kmiFile.delete()
+                koFile.delete()
+                clearStagedLateLoadKo()
+            }
+            is LateLoadChoice.Kmi -> {
+                koFile.delete()
+                clearStagedLateLoadKo()
+                kmiFile.writeText(choice.kmi.trim())
+            }
+            is LateLoadChoice.KoFile -> {
+                kmiFile.delete()
+                koFile.writeText(choice.absolutePath.trim())
+            }
+        }
+    }
+}
+
+/**
+ * The KMI the user chose for Magica late-load, or null for auto-detect.
+ * The app-zygote preload (AppZygotePreload) reads the same file from
+ * <dataDir>/files/magica-kmi and forwards it as ksud's --kmi flag, so the
+ * choice sticks across boots until the user picks Auto again.
+ */
+suspend fun readLateLoadKmi(): String? = withContext(Dispatchers.IO) {
+    when (val choice = readLateLoadChoice()) {
+        is LateLoadChoice.Kmi -> choice.kmi
+        else -> null
+    }
+}
+
+suspend fun writeLateLoadKmi(kmi: String?) = withContext(Dispatchers.IO) {
+    runCatching {
+        if (kmi.isNullOrBlank()) {
+            writeLateLoadChoice(LateLoadChoice.Auto)
+        } else {
+            writeLateLoadChoice(LateLoadChoice.Kmi(kmi))
+        }
+    }
+}
+
+private fun clearStagedLateLoadKo() {
+    File(ksuApp.filesDir, LATE_LOAD_KO_DIR).deleteRecursively()
+}
+
+/**
+ * Copy a user-picked .ko (a content URI the root shell cannot read) into
+ * the app's files dir, where the late-load process can read it as root.
+ * Only one staged scroll is kept; staging a new one deletes the old.
+ * Returns the staged file's absolute path, display name, and size, or
+ * null when the pick is not a readable, non-empty .ko within the cap.
+ */
+suspend fun stageLateLoadKo(context: Context, uri: Uri): Triple<String, String, Long>? =
+    withContext(Dispatchers.IO) {
+        runCatching {
+            val displayName = context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (nameIndex >= 0) cursor.getString(nameIndex) else null
+                } else {
+                    null
+                }
+            } ?: uri.lastPathSegment ?: "hand-picked.ko"
+            val safeName = displayName
+                .substringAfterLast('/')
+                .map { c -> if (c.isLetterOrDigit() || c == '.' || c == '-' || c == '_') c else '_' }
+                .joinToString("")
+                .take(64)
+                .trim('.', '_')
+                .ifBlank { "hand-picked" }
+                .let { if (it.endsWith(".ko", ignoreCase = true)) it else "$it.ko" }
+            val dir = File(ksuApp.filesDir, LATE_LOAD_KO_DIR)
+            dir.deleteRecursively()
+            dir.mkdirs()
+            val staged = File(dir, safeName)
+            var bytes = 0L
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                staged.outputStream().use { output ->
+                    val buffer = ByteArray(64 * 1024)
+                    while (true) {
+                        val read = input.read(buffer)
+                        if (read < 0) break
+                        bytes += read
+                        if (bytes > MAX_STAGED_KO_BYTES) {
+                            throw IOException("staged .ko exceeds the ${MAX_STAGED_KO_BYTES / 1024 / 1024} MB cap")
+                        }
+                        output.write(buffer, 0, read)
+                    }
+                }
+            } ?: return@runCatching null
+            if (bytes <= 0) {
+                staged.delete()
+                return@runCatching null
+            }
+            Triple(staged.absolutePath, safeName, bytes)
+        }.getOrNull()
+    }
+
 suspend fun isAbDevice(): Boolean = withContext(Dispatchers.IO) {
     val shell = getRootShell()
     val cmd = "boot-info is-ab-device"

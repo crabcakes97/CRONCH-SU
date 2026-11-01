@@ -1,11 +1,13 @@
 package me.weishu.kernelsu.ui.screen.install
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +30,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +44,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import me.weishu.kernelsu.R
 import me.weishu.kernelsu.ui.component.dialog.rememberConfirmDialog
+import me.weishu.kernelsu.ui.theme.CronchFlavorStripColors
 import me.weishu.kernelsu.ui.theme.LocalEnableBlur
 import me.weishu.kernelsu.ui.util.BlurredBar
 import me.weishu.kernelsu.ui.util.LkmSelection
@@ -48,6 +52,7 @@ import me.weishu.kernelsu.ui.util.rememberBlurBackdrop
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -89,6 +94,12 @@ internal fun InstallScreenMiuix(
     val blurActive = backdrop != null
     val barColor = if (blurActive) Color.Transparent else colorScheme.surface
 
+    // The chicken pecks down once a way in is chosen. Real state, no loops.
+    val peckRotation by animateFloatAsState(
+        targetValue = if (uiState.installMethod != null) -18f else 0f,
+        label = "ChickenPeck"
+    )
+
     Scaffold(
         topBar = {
             TopBar(
@@ -123,6 +134,37 @@ internal fun InstallScreenMiuix(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = stringResource(R.string.install_chicken_mark),
+                                    modifier = Modifier
+                                        .padding(end = 8.dp)
+                                        .graphicsLayer { rotationZ = peckRotation }
+                                )
+                                Text(text = stringResource(R.string.install_rites_title))
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text(text = stringResource(R.string.install_enrichment_line))
+                            Text(text = stringResource(R.string.install_rites_line))
+                            Spacer(Modifier.height(12.dp))
+                            Row(modifier = Modifier.fillMaxWidth()) {
+                                CronchFlavorStripColors.forEach { flavorColor ->
+                                    Spacer(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(6.dp)
+                                            .background(flavorColor)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp),
+                    ) {
                         SelectInstallMethod(
                             state = uiState,
                             onSelected = actions.onSelectMethod,
@@ -130,22 +172,22 @@ internal fun InstallScreenMiuix(
                             onSelectBootImage = actions.onSelectBootImage,
                         )
                     }
+                    val isDownload = uiState.installMethod is InstallMethod.DownloadFile
+                    val partitionItems = if (isDownload) {
+                        uiState.remoteDisplayPartitions
+                    } else {
+                        uiState.displayPartitions
+                    }
+                    val partitionIndex = if (isDownload) {
+                        uiState.remotePartitionSelectionIndex
+                    } else {
+                        uiState.partitionSelectionIndex
+                    }
                     AnimatedVisibility(
-                        visible = uiState.canSelectPartition,
+                        visible = uiState.canSelectPartition && partitionItems.isNotEmpty(),
                         enter = expandVertically(),
                         exit = shrinkVertically()
                     ) {
-                        val isDownload = uiState.installMethod is InstallMethod.DownloadFile
-                        val partitionItems = if (isDownload) {
-                            uiState.remoteDisplayPartitions
-                        } else {
-                            uiState.displayPartitions
-                        }
-                        val partitionIndex = if (isDownload) {
-                            uiState.remotePartitionSelectionIndex
-                        } else {
-                            uiState.partitionSelectionIndex
-                        }
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -154,7 +196,7 @@ internal fun InstallScreenMiuix(
                             OverlayDropdownPreference(
                                 items = partitionItems,
                                 selectedIndex = partitionIndex,
-                                title = if (isDownload) {
+                                title = if (isDownload || uiState.slotSuffix.isBlank()) {
                                     stringResource(R.string.install_select_partition)
                                 } else {
                                     "${stringResource(R.string.install_select_partition)} (${uiState.slotSuffix})"
@@ -167,6 +209,76 @@ internal fun InstallScreenMiuix(
                                         modifier = Modifier.padding(end = 12.dp),
                                         contentDescription = null
                                     )
+                                }
+                            )
+                        }
+                    }
+                    AnimatedVisibility(
+                        visible = uiState.canSelectPartition && partitionItems.isEmpty(),
+                        enter = expandVertically(),
+                        exit = shrinkVertically()
+                    ) {
+                        // The nest list came back empty (block map unreadable
+                        // without the crown, or a blank slot scroll). Say why
+                        // instead of showing a dead picker.
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp),
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(text = stringResource(R.string.install_select_partition))
+                                Spacer(Modifier.height(4.dp))
+                                Text(text = stringResource(R.string.install_nest_empty_reason))
+                            }
+                        }
+                    }
+                    if (uiState.lkmSelection !is LkmSelection.LkmUri) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp),
+                        ) {
+                            BasicComponent(
+                                title = stringResource(id = R.string.select_kmi),
+                                summary = stringResource(
+                                    id = R.string.current_kmi,
+                                    (uiState.lkmSelection as? LkmSelection.KmiString)?.value
+                                        ?: uiState.currentKmi.ifBlank { "Unknown" }
+                                ),
+                                onClick = actions.onPickKmi,
+                                startAction = {
+                                    Text(
+                                        text = stringResource(R.string.install_chicken_mark),
+                                        modifier = Modifier
+                                            .padding(end = 12.dp)
+                                            .graphicsLayer { rotationZ = peckRotation }
+                                    )
+                                },
+                                endActions = {
+                                    if (uiState.lkmSelection is LkmSelection.KmiString) {
+                                        IconButton(onClick = actions.onClearLkm) {
+                                            Icon(
+                                                MiuixIcons.Close,
+                                                modifier = Modifier.size(16.dp),
+                                                contentDescription = stringResource(android.R.string.cancel),
+                                                tint = colorScheme.onSurfaceVariantActions
+                                            )
+                                        }
+                                    } else {
+                                        val layoutDirection = LocalLayoutDirection.current
+                                        Icon(
+                                            modifier = Modifier
+                                                .size(width = 10.dp, height = 16.dp)
+                                                .graphicsLayer {
+                                                    scaleX = if (layoutDirection == LayoutDirection.Rtl) -1f else 1f
+                                                }
+                                                .align(Alignment.CenterVertically),
+                                            imageVector = MiuixIcons.Basic.ArrowRight,
+                                            contentDescription = null,
+                                            tint = colorScheme.onSurfaceVariantActions,
+                                        )
+                                    }
                                 }
                             )
                         }
@@ -282,6 +394,42 @@ internal fun InstallScreenMiuix(
                         colors = ButtonDefaults.textButtonColorsPrimary(),
                         onClick = actions.onNext
                     )
+                    Text(
+                        text = stringResource(id = R.string.cronch_motto),
+                        modifier = Modifier.padding(top = 12.dp)
+                    )
+                    Text(
+                        text = stringResource(id = R.string.install_flavor_archive_line),
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                    // The Council Scroll: the Sacred Order, the tech
+                    // doctrine, and the full roster, in one closing card.
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp),
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(text = stringResource(R.string.install_sacred_order_title))
+                            Spacer(Modifier.height(4.dp))
+                            Text(text = stringResource(R.string.install_sacred_order_line))
+                            Spacer(Modifier.height(8.dp))
+                            Text(text = stringResource(R.string.install_root_brrr_line))
+                            Spacer(Modifier.height(8.dp))
+                            Text(text = stringResource(R.string.install_roster_line))
+                            Spacer(Modifier.height(12.dp))
+                            Row(modifier = Modifier.fillMaxWidth()) {
+                                CronchFlavorStripColors.forEach { flavorColor ->
+                                    Spacer(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(6.dp)
+                                            .background(flavorColor)
+                                    )
+                                }
+                            }
+                        }
+                    }
                     Spacer(
                         Modifier.height(
                             WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() +

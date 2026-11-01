@@ -1,7 +1,10 @@
 package me.weishu.kernelsu.ui.screen.home
 
+import android.app.Activity
 import android.content.Intent
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,10 +27,16 @@ import me.weishu.kernelsu.R
 import me.weishu.kernelsu.magica.MagicaService
 import me.weishu.kernelsu.ui.LocalUiMode
 import me.weishu.kernelsu.ui.UiMode
+import me.weishu.kernelsu.ui.component.choosekmidialog.ChooseKmiDialog
 import me.weishu.kernelsu.ui.component.dialog.rememberLoadingDialog
+import me.weishu.kernelsu.ui.component.lateloadchooser.LateLoadChooserDialog
 import me.weishu.kernelsu.ui.navigation3.Navigator
 import me.weishu.kernelsu.ui.navigation3.Route
+import me.weishu.kernelsu.ui.screen.install.isKoFile
 import me.weishu.kernelsu.ui.util.CronchLog
+import me.weishu.kernelsu.ui.util.LateLoadChoice
+import me.weishu.kernelsu.ui.util.stageLateLoadKo
+import me.weishu.kernelsu.ui.util.writeLateLoadChoice
 import me.weishu.kernelsu.ui.viewmodel.HomeViewModel
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -62,23 +71,63 @@ fun HomePager(
         onPauseOrDispose { }
     }
 
+    var showLateLoadChooser by rememberSaveable { mutableStateOf(false) }
+    var showChooseKmiForLateLoad by rememberSaveable { mutableStateOf(false) }
+
+    // The choice is written before the service starts: the app-zygote preload
+    // reads it and forwards it as ksud's --kmi/--ko-path flags. Auto means
+    // auto-detect.
+    fun launchLateLoad(choice: LateLoadChoice) {
+        scope.launch(Dispatchers.IO) {
+            writeLateLoadChoice(choice)
+            withContext(Dispatchers.Main) {
+                CronchLog.log("Root", "jailbreak requested (late-load)")
+                loadingDialog.showLoading()
+                context.startService(Intent(context, MagicaService::class.java))
+            }
+            // Manager will be force-stopped and restarted by late-load on success.
+            // If that doesn't happen within timeout, jailbreak likely failed.
+            delay(30_000.milliseconds)
+            withContext(Dispatchers.Main) {
+                loadingDialog.hide()
+                CronchLog.log("Root", "jailbreak timed out after 30s (no restart — likely failed)")
+                Toast.makeText(context, R.string.jailbreak_timeout, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    // Hand-picked .ko for late-load: the content URI is not readable by the
+    // root shell, so the pick is staged into the app's files dir first and
+    // the staged path is what gets late-loaded. Invalid picks toast and
+    // change nothing.
+    val selectKoLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.data?.let { uri ->
+                if (!isKoFile(context, uri)) {
+                    Toast.makeText(context, R.string.install_only_support_ko_file, Toast.LENGTH_LONG).show()
+                    return@let
+                }
+                scope.launch(Dispatchers.IO) {
+                    val staged = stageLateLoadKo(context, uri)
+                    withContext(Dispatchers.Main) {
+                        if (staged == null) {
+                            Toast.makeText(context, R.string.install_only_support_ko_file, Toast.LENGTH_LONG).show()
+                        } else {
+                            launchLateLoad(LateLoadChoice.KoFile(staged.first))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     val actions = HomeActions(
         onInstallClick = { navigator.push(Route.Install) },
         onOpenUrl = uriHandler::openUri,
         onJailbreakClick = {
-            CronchLog.log("Root", "jailbreak requested (late-load)")
-            loadingDialog.showLoading()
-            context.startService(Intent(context, MagicaService::class.java))
-            // Manager will be force-stopped and restarted by late-load on success.
-            // If that doesn't happen within timeout, jailbreak likely failed.
-            scope.launch(Dispatchers.IO) {
-                delay(30_000.milliseconds)
-                withContext(Dispatchers.Main) {
-                    loadingDialog.hide()
-                    CronchLog.log("Root", "jailbreak timed out after 30s (no restart — likely failed)")
-                    Toast.makeText(context, R.string.jailbreak_timeout, Toast.LENGTH_LONG).show()
-                }
-            }
+            showLateLoadChooser = true
         },
     )
 
@@ -95,4 +144,29 @@ fun HomePager(
             bottomInnerPadding = bottomInnerPadding,
         )
     }
+
+    LateLoadChooserDialog(
+        show = showLateLoadChooser,
+        onDismissRequest = { showLateLoadChooser = false },
+        onConfirm = { choice ->
+            showLateLoadChooser = false
+            launchLateLoad(choice)
+        },
+        onPickBloodline = {
+            showLateLoadChooser = false
+            showChooseKmiForLateLoad = true
+        },
+        onPickKoFile = {
+            showLateLoadChooser = false
+            selectKoLauncher.launch(Intent(Intent.ACTION_GET_CONTENT).apply { type = "application/octet-stream" })
+        },
+    )
+    ChooseKmiDialog(
+        show = showChooseKmiForLateLoad,
+        onDismissRequest = { showChooseKmiForLateLoad = false },
+        onSelected = { kmi ->
+            showChooseKmiForLateLoad = false
+            kmi?.let { launchLateLoad(LateLoadChoice.Kmi(it)) }
+        },
+    )
 }

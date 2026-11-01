@@ -186,17 +186,14 @@ static int ksu_patch_text_cb(void *arg)
     return ret;
 }
 
+/* Samsung target: text patching via stop_machine/fixmap panics under the
+ * EL2 guard. The proven stock payload disables it: log and refuse with
+ * -EOPNOTSUPP; hooks ride the tracepoint dispatcher instead. */
 int ksu_patch_text(void *dst, void *src, size_t len, int flags)
 {
-    struct patch_text_info info = {
-        .dst = dst,
-        .src = src,
-        .len = len,
-        .cpu_count = ATOMIC_INIT(0),
-        .flags = flags,
-    };
-
-    return stop_machine(ksu_patch_text_cb, &info, cpu_online_mask);
+    pr_info("patch_text disabled for this Samsung target: dst=0x%lx len=%zu flags=0x%x\n",
+        (unsigned long)dst, len, flags);
+    return -EOPNOTSUPP;
 }
 
 /*

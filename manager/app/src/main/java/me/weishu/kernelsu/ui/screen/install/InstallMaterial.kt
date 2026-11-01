@@ -1,12 +1,16 @@
 package me.weishu.kernelsu.ui.screen.install
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -35,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import me.weishu.kernelsu.R
 import me.weishu.kernelsu.ui.component.dialog.rememberConfirmDialog
@@ -47,6 +52,7 @@ import me.weishu.kernelsu.ui.component.material.SegmentedRadioItem
 import me.weishu.kernelsu.ui.component.material.SnackBarHost
 import me.weishu.kernelsu.ui.component.material.TopBarBackButton
 import me.weishu.kernelsu.ui.component.material.expressiveTopAppBarColors
+import me.weishu.kernelsu.ui.theme.CronchFlavorStripColors
 import me.weishu.kernelsu.ui.util.LkmSelection
 
 /**
@@ -79,6 +85,30 @@ internal fun InstallScreenMaterial(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(13.dp)
         ) {
+            // The chicken pecks down once a way in is chosen. Real state, no loops.
+            val peckRotation by animateFloatAsState(
+                targetValue = if (uiState.installMethod != null) -18f else 0f,
+                label = "ChickenPeck"
+            )
+            SegmentedColumn(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                title = stringResource(R.string.install_rites_title),
+                content = buildList {
+                    add {
+                        SegmentedListItem(
+                            leadingContent = {
+                                Text(
+                                    stringResource(R.string.install_chicken_mark),
+                                    modifier = Modifier.graphicsLayer { rotationZ = peckRotation }
+                                )
+                            },
+                            headlineContent = { Text(stringResource(R.string.install_enrichment_line)) },
+                            supportingContent = { Text(stringResource(R.string.install_rites_line)) },
+                        )
+                    }
+                }
+            )
+
             SelectInstallMethod(
                 state = uiState,
                 onSelected = actions.onSelectMethod,
@@ -100,18 +130,61 @@ internal fun InstallScreenMaterial(
                     } else {
                         uiState.partitionSelectionIndex
                     }
+                    if (uiState.lkmSelection !is LkmSelection.LkmUri) add {
+                        SegmentedListItem(
+                            leadingContent = {
+                                Text(
+                                    stringResource(R.string.install_chicken_mark),
+                                    modifier = Modifier.graphicsLayer { rotationZ = peckRotation }
+                                )
+                            },
+                            headlineContent = { Text(stringResource(R.string.select_kmi)) },
+                            supportingContent = {
+                                val picked = (uiState.lkmSelection as? LkmSelection.KmiString)?.value
+                                Text(
+                                    stringResource(
+                                        R.string.current_kmi,
+                                        picked ?: uiState.currentKmi.ifBlank { "Unknown" }
+                                    )
+                                )
+                            },
+                            trailingContent = {
+                                if (uiState.lkmSelection is LkmSelection.KmiString) {
+                                    IconButton(onClick = actions.onClearLkm) {
+                                        Icon(
+                                            Icons.Filled.Close,
+                                            contentDescription = stringResource(android.R.string.cancel)
+                                        )
+                                    }
+                                } else {
+                                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null)
+                                }
+                            },
+                            onClick = actions.onPickKmi
+                        )
+                    }
                     if (partitionItems.isNotEmpty()) add {
                         SegmentedDropdownItem(
                             enabled = uiState.canSelectPartition,
                             items = partitionItems,
                             selectedIndex = partitionIndex,
-                            title = if (isDownload) {
+                            title = if (isDownload || uiState.slotSuffix.isBlank()) {
                                 stringResource(R.string.install_select_partition)
                             } else {
                                 "${stringResource(R.string.install_select_partition)} (${uiState.slotSuffix})"
                             },
                             onItemSelected = actions.onSelectPartition,
                             icon = Icons.Filled.Edit
+                        )
+                    } else if (uiState.canSelectPartition) add {
+                        // The nest list came back empty (block map unreadable
+                        // without the crown, or a blank slot scroll). Say why
+                        // instead of showing a dead picker.
+                        SegmentedListItem(
+                            enabled = false,
+                            leadingContent = { Icon(Icons.Filled.Edit, null) },
+                            headlineContent = { Text(stringResource(R.string.install_select_partition)) },
+                            supportingContent = { Text(stringResource(R.string.install_nest_empty_reason)) },
                         )
                     }
                     if (uiState.canForceBackup) add {
@@ -203,6 +276,56 @@ internal fun InstallScreenMaterial(
                 enabled = uiState.installMethod != null,
                 onClick = actions.onNext
             ) { Text(stringResource(R.string.install_next)) }
+            Text(
+                text = stringResource(R.string.cronch_motto),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = stringResource(R.string.install_flavor_archive_line),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                textAlign = TextAlign.Center
+            )
+            // The Council Scroll: the Sacred Order, the tech doctrine, and
+            // the full roster, in one closing card. Lore voice on top, and
+            // the flavor strip runs under it in all ten archive colors.
+            SegmentedColumn(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                title = stringResource(R.string.install_sacred_order_title),
+                content = buildList {
+                    add {
+                        SegmentedListItem(
+                            headlineContent = { Text(stringResource(R.string.install_sacred_order_line)) },
+                        )
+                    }
+                    add {
+                        SegmentedListItem(
+                            headlineContent = { Text(stringResource(R.string.install_root_brrr_line)) },
+                        )
+                    }
+                    add {
+                        SegmentedListItem(
+                            headlineContent = { Text(stringResource(R.string.install_roster_line)) },
+                        )
+                    }
+                    add {
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            CronchFlavorStripColors.forEach { flavorColor ->
+                                Spacer(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(6.dp)
+                                        .background(flavorColor)
+                                )
+                            }
+                        }
+                    }
+                }
+            )
         }
     }
 }

@@ -119,6 +119,39 @@ pub fn disable_adb_root() -> Result<()> {
     Ok(())
 }
 
+/// True only for the staged late-load file the manager writes:
+/// `<files>/lateload/<name>.ko` under one of the app data dirs for
+/// `package_name`, with a flat filename from a strict alphabet, ending
+/// in `.ko`, and no `..` segments. Used to keep a user-picked path from
+/// ever reaching the adb-shell command string unsanitized.
+fn is_staged_late_load_ko(package_name: &str, path: &str) -> bool {
+    if package_name.is_empty()
+        || !package_name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '_')
+    {
+        return false;
+    }
+    let prefixes = [
+        format!("/data/data/{package_name}/files/lateload/"),
+        format!("/data/user/0/{package_name}/files/lateload/"),
+        format!("/data/user_de/0/{package_name}/files/lateload/"),
+    ];
+    let Some(name) = prefixes
+        .iter()
+        .find_map(|prefix| path.strip_prefix(prefix.as_str()))
+    else {
+        return false;
+    };
+    !name.is_empty()
+        && name.ends_with(".ko")
+        && !name.contains("..")
+        && !name.contains('/')
+        && name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-' || c == '_')
+}
+
 fn connect_to_device(port: u16) -> Result<ADBTcpDevice> {
     const MAX_RETRIES: u32 = 30;
     for attempt in 1..=MAX_RETRIES {
@@ -137,7 +170,13 @@ fn connect_to_device(port: u16) -> Result<ADBTcpDevice> {
     bail!("Failed to connect to ADB device after {MAX_RETRIES} attempts")
 }
 
-pub fn run(port: u16, package_name: &String, allow_shell: bool) -> Result<()> {
+pub fn run(
+    port: u16,
+    package_name: &String,
+    allow_shell: bool,
+    kmi: Option<String>,
+    ko_path: Option<String>,
+) -> Result<()> {
     enable_adb_root(port)?;
 
     let mut device = connect_to_device(port)?;
@@ -148,12 +187,45 @@ pub fn run(port: u16, package_name: &String, allow_shell: bool) -> Result<()> {
     // The late-load process has full root + su domain and will:
     // 1. Load kernelsu.ko, enforce SELinux, run stage scripts
     // 2. Restore adb properties (disable adb root/tcp mode)
+    // A user-picked KMI is forwarded so Magica loads the chosen embedded
+    // chip instead of auto-detecting; anything outside the KMI alphabet is
+    // refused because the value is interpolated into a shell command.
+    let kmi_arg = match &kmi {
+        Some(kmi) => {
+            anyhow::ensure!(
+                !kmi.is_empty()
+                    && kmi
+                        .chars()
+                        .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-' || c == '_'),
+                "refusing unsafe KMI for late-load: {kmi}"
+            );
+            format!(" --kmi {kmi}")
+        }
+        None => String::new(),
+    };
     let allow_shell_arg = if allow_shell { " --allow-shell" } else { "" };
+    // A hand-picked .ko file is forwarded as --ko-path. The value is
+    // interpolated into an adb-shell command string below, so it is
+    // whitelisted hard: it must be the exact staged file the manager
+    // wrote under this app's files dir, one flat filename, .ko only.
+    // Anything else is refused before any shell runs.
+    let ko_path_arg = match &ko_path {
+        Some(path) => {
+            anyhow::ensure!(
+                is_staged_late_load_ko(package_name, path),
+                "refusing unsafe --ko-path for late-load: {path}"
+            );
+            format!(" --ko-path {path}")
+        }
+        None => String::new(),
+    };
     let cmd = format!(
-        "{} late-load --post-magica --package-name {}{}",
+        "{} late-load --post-magica --package-name {}{}{}{}",
         self_path.display(),
         package_name,
-        allow_shell_arg
+        allow_shell_arg,
+        kmi_arg,
+        ko_path_arg
     );
     info!("Executing '{cmd}' via adb shell...");
     let mut stdout = Vec::new();

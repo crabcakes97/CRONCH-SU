@@ -62,6 +62,7 @@ fun InstallScreen() {
     var partitionSelectionIndex by rememberSaveable { mutableIntStateOf(0) }
     var hasCustomSelected by rememberSaveable { mutableStateOf(false) }
     val showChooseKmiDialog = rememberSaveable { mutableStateOf(false) }
+    var chooseKmiAutoInstall by rememberSaveable { mutableStateOf(true) }
     var advancedOptionsShown by rememberSaveable { mutableStateOf(false) }
     var allowShell by rememberSaveable { mutableStateOf(false) }
     var enableAdb by rememberSaveable { mutableStateOf(false) }
@@ -154,7 +155,9 @@ fun InstallScreen() {
         onSelected = { kmi ->
             kmi?.let {
                 lkmSelection = LkmSelection.KmiString(it)
-                onInstall()
+                // Picked from the Peck Onward gate: go straight to flashing.
+                // Picked from the Bloodline row: just store it, stay here.
+                if (chooseKmiAutoInstall) onInstall()
             }
         }
     )
@@ -248,6 +251,10 @@ fun InstallScreen() {
             selectLkmLauncher.launch(Intent(Intent.ACTION_GET_CONTENT).apply { type = "application/octet-stream" })
         },
         onClearLkm = { lkmSelection = LkmSelection.KmiNone },
+        onPickKmi = {
+            chooseKmiAutoInstall = false
+            showChooseKmiDialog.value = true
+        },
         onSelectPartition = { index ->
             hasCustomSelected = true
             val method = installMethod
@@ -269,6 +276,7 @@ fun InstallScreen() {
                 else -> isKmiUnknown
             }
             if (!isLkmSelected && isKmiUnresolved) {
+                chooseKmiAutoInstall = true
                 showChooseKmiDialog.value = true
             } else {
                 onInstall()

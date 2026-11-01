@@ -60,6 +60,11 @@ enum Commands {
         #[arg(long)]
         kmi: Option<String>,
 
+        /// Load this kernelsu.ko file instead of the embedded asset.
+        /// Wins over --kmi when both are given (see late_load::run).
+        #[arg(long, value_name = "PATH")]
+        ko_path: Option<PathBuf>,
+
         /// manager package name
         #[arg(long, default_value_t = String::from(defs::DEFAULT_PACKAGE_NAME))]
         package_name: String,
@@ -663,15 +668,18 @@ pub fn run() -> Result<()> {
             allow_shell,
             post_magica,
             kmi,
+            ko_path,
             package_name,
         } => {
             if let Some(port) = magica {
-                return crate::magica::run(port, &package_name, allow_shell).map_err(|e| {
-                    error!("Error running magica: {e}");
-                    e
-                });
+                let ko_path = ko_path.map(|p| p.to_string_lossy().into_owned());
+                return crate::magica::run(port, &package_name, allow_shell, kmi, ko_path)
+                    .map_err(|e| {
+                        error!("Error running magica: {e}");
+                        e
+                    });
             }
-            let result = crate::late_load::run(&package_name, kmi, allow_shell);
+            let result = crate::late_load::run(&package_name, kmi, ko_path, allow_shell);
             if post_magica {
                 info!("Restoring adb properties (post-magica cleanup)...");
                 if let Err(e) = crate::magica::disable_adb_root() {

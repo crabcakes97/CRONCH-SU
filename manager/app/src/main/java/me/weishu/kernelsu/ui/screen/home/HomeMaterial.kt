@@ -134,6 +134,7 @@ fun HomePagerMaterial(
                 state = state,
                 actions = actions,
             )
+            CronchometerSectionMaterial()
             InfoCard(systemInfo = state.systemInfo)
             SupportLinks(onOpenUrl = actions.onOpenUrl)
             HonorableMentions(onOpenUrl = actions.onOpenUrl)
@@ -459,6 +460,12 @@ private fun HonorableMentions(
         )
         Text(
             text = stringResource(R.string.cronch_chainfire_tribute),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 4.dp, end = 4.dp),
+        )
+        Text(
+            text = stringResource(R.string.home_ai_council_line),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 4.dp, end = 4.dp),

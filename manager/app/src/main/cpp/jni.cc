@@ -409,7 +409,7 @@ Java_me_weishu_kernelsu_Natives_isAvcSpoofEnabled(JNIEnv *env, jobject) {
     return is_avc_spoof_enabled();
 }
 
-int fork_dont_care_and_exec_ksud(const char *path, const char *pkg) {
+int fork_dont_care_and_exec_ksud(const char *path, const char *pkg, const char *kmi, const char *ko_path) {
     int pid = fork();
     if (pid < 0) {
         PLOGE("fork");
@@ -439,7 +439,29 @@ int fork_dont_care_and_exec_ksud(const char *path, const char *pkg) {
         _exit(0);
     }
 
-    execl(path, "ksud", "late-load", "--magica", "5555", "--package-name", pkg, nullptr);
+    // The KMI the user picked in the late-load chooser (null/empty = auto-detect).
+    // Forwarded as ksud's --kmi flag so Magica loads the chosen embedded chip.
+    // A hand-picked .ko path rides along as --ko-path and wins inside ksud;
+    // it was already whitelisted by the Java reader and is whitelisted again
+    // in magica.rs before it reaches any shell.
+    const char *argv[12];
+    int argc = 0;
+    argv[argc++] = "ksud";
+    argv[argc++] = "late-load";
+    argv[argc++] = "--magica";
+    argv[argc++] = "5555";
+    argv[argc++] = "--package-name";
+    argv[argc++] = pkg;
+    if (kmi != nullptr && kmi[0] != '\0') {
+        argv[argc++] = "--kmi";
+        argv[argc++] = kmi;
+    }
+    if (ko_path != nullptr && ko_path[0] != '\0') {
+        argv[argc++] = "--ko-path";
+        argv[argc++] = ko_path;
+    }
+    argv[argc] = nullptr;
+    execv(path, const_cast<char *const *>(argv));
     PLOGE("exec magica");
     _exit(1);
 }
@@ -447,11 +469,19 @@ int fork_dont_care_and_exec_ksud(const char *path, const char *pkg) {
 extern "C"
 JNIEXPORT void JNICALL
 Java_me_weishu_kernelsu_magica_AppZygotePreload_forkDontCareAndExecKsud(JNIEnv *env, jclass clazz,
-                                                                        jstring ksud_path, jstring pkg_name) {
+                                                                        jstring ksud_path, jstring pkg_name, jstring kmi, jstring ko_path) {
     auto path = env->GetStringUTFChars(ksud_path, nullptr);
     auto pkg = env->GetStringUTFChars(pkg_name, nullptr);
+    const char *kmi_str = (kmi != nullptr) ? env->GetStringUTFChars(kmi, nullptr) : nullptr;
+    const char *ko_path_str = (ko_path != nullptr) ? env->GetStringUTFChars(ko_path, nullptr) : nullptr;
     LOGD("executing magica %s (pkg %s)", path, pkg);
-    fork_dont_care_and_exec_ksud(path, pkg);
+    fork_dont_care_and_exec_ksud(path, pkg, kmi_str, ko_path_str);
+    if (ko_path_str != nullptr) {
+        env->ReleaseStringUTFChars(ko_path, ko_path_str);
+    }
+    if (kmi_str != nullptr) {
+        env->ReleaseStringUTFChars(kmi, kmi_str);
+    }
     env->ReleaseStringUTFChars(ksud_path, path);
     env->ReleaseStringUTFChars(pkg_name, pkg);
 }

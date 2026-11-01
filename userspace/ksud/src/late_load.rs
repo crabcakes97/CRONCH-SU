@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use log::{info, warn};
 use rustix::cstr;
-use std::{process::Command, time::Instant};
+use std::{borrow::Cow, path::PathBuf, process::Command, time::Instant};
 
 use crate::module::{ScriptWait, handle_updated_modules, prune_modules};
 use crate::{assets, defs, init_event, metamodule, restorecon, utils};
@@ -35,7 +35,17 @@ fn dump_process_info(label: &str) {
     );
 }
 
-pub fn run(package_name: &String, kmi: Option<String>, allow_shell: bool) -> Result<()> {
+/// Late-load entry point. `ko_path`, when given, loads that kernelsu.ko
+/// file instead of the embedded asset for the KMI, and wins over `kmi`
+/// when both are given (the choice is logged). A missing or unreadable
+/// file is a hard error: silently falling back to the embedded asset
+/// would load a different module than the user picked.
+pub fn run(
+    package_name: &String,
+    kmi: Option<String>,
+    ko_path: Option<PathBuf>,
+    allow_shell: bool,
+) -> Result<()> {
     utils::daemonize(false)?;
     info!("late-load command triggered!");
     dump_process_info("late-load start");
@@ -44,20 +54,40 @@ pub fn run(package_name: &String, kmi: Option<String>, allow_shell: bool) -> Res
     if ksuinit::has_kernelsu() {
         info!("KernelSU already loaded, skip loading ko");
     } else {
-        // 2. Detect current KMI version
-        let kmi = kmi.map_or_else(
-            || crate::boot_patch::get_current_kmi().context("Failed to detect current KMI version"),
-            Ok,
-        )?;
-        info!("Detected KMI: {kmi}");
+        // A hand-picked .ko file wins over the KMI asset. Read it up
+        // front so a missing file fails here, before anything is loaded.
+        let ko_data: Cow<'_, [u8]> = match &ko_path {
+            Some(path) => {
+                if kmi.is_some() {
+                    info!("--ko-path given, ignoring --kmi (file wins)");
+                }
+                info!("Loading kernelsu.ko from file {}...", path.display());
+                let data = std::fs::read(path)
+                    .with_context(|| format!("Failed to read kernelsu.ko file {}", path.display()))?;
+                anyhow::ensure!(!data.is_empty(), "kernelsu.ko file {} is empty", path.display());
+                Cow::Owned(data)
+            }
+            None => {
+                // 2. Detect current KMI version
+                let kmi = kmi.map_or_else(
+                    || {
+                        crate::boot_patch::get_current_kmi()
+                            .context("Failed to detect current KMI version")
+                    },
+                    Ok,
+                )?;
+                info!("Detected KMI: {kmi}");
 
-        // 3. Get kernelsu.ko from embedded assets
-        let ko_name = format!("{kmi}_kernelsu.ko");
-        let ko_data = assets::get_asset_data(&ko_name)
-            .with_context(|| format!("Failed to get {ko_name} from assets"))?;
+                // 3. Get kernelsu.ko from embedded assets
+                let ko_name = format!("{kmi}_kernelsu.ko");
+                let ko_data = assets::get_asset_data(&ko_name)
+                    .with_context(|| format!("Failed to get {ko_name} from assets"))?;
+                info!("Loading kernelsu.ko for KMI {kmi}...");
+                ko_data
+            }
+        };
 
         // 4. Load kernelsu.ko from memory with manual relocation
-        info!("Loading kernelsu.ko for KMI {kmi}...");
         // bundled flag is meaningless in jailbreak mode since we can't flash boot to update it.
         let params = if allow_shell {
             cstr!("allow_shell=1")

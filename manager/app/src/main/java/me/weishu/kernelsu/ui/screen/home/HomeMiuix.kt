@@ -166,6 +166,9 @@ fun HomePagerMiuix(
                             state = state,
                             actions = actions,
                         )
+                        CronchometerSectionMiuix(
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                         InfoCard(
                             systemInfo = state.systemInfo,
                             modifier = Modifier.fillMaxWidth(),
@@ -543,6 +546,12 @@ private fun HonorableMentionsMiuix(
             )
             Text(
                 text = stringResource(R.string.cronch_chainfire_tribute),
+                fontSize = 12.sp,
+                color = colorScheme.onSurfaceVariantSummary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+            Text(
+                text = stringResource(R.string.home_ai_council_line),
                 fontSize = 12.sp,
                 color = colorScheme.onSurfaceVariantSummary,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),

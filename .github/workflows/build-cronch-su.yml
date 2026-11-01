@@ -33,6 +33,15 @@
 # a no-op when the build already signed exactly this way: same key, same
 # schemes, same certificate.
 #
+# ksud is built from THIS tree in the same run (the build-lkm,
+# build-ksuinit and build-ksud jobs below) and placed into the manager's
+# jniLibs before Gradle runs, so the APK carries the current Rust
+# userspace changes (--kmi/--ko-path late-load) and kernel modules
+# crowned for this pinned key (KSU_EXPECTED_SIZE 0x317 / the pinned
+# certificate hash). libksud.so is git-ignored, so without these jobs a
+# fresh checkout builds an APK with no current ksud at all. The signing
+# steps below are untouched by the ksud work.
+#
 # Usage: push to the main branch (or run it by hand from Actions ->
 # "Build Cronch SU" -> Run workflow), then download the
 # "cronch-su-debug-apk" artifact. Uninstall any Cronch SU build signed
@@ -47,19 +56,66 @@ on:
     branches: ["main"]
     paths:
       - ".github/workflows/build-cronch-su.yml"
+      - ".github/workflows/build-lkm.yml"
+      - ".github/workflows/ddk-lkm.yml"
+      - ".github/workflows/ksud.yml"
+      - ".github/workflows/ksuinit.yml"
+      - ".github/scripts/setup-rust-build.sh"
       - "debug.keystore"
       - "manager/**"
+      - "kernel/**"
+      - "userspace/**"
+      - "Cargo.lock"
+      - "Cargo.toml"
       - "CRONCHSU.md"
   pull_request:
     branches: ["main"]
     paths:
       - ".github/workflows/build-cronch-su.yml"
+      - ".github/workflows/build-lkm.yml"
+      - ".github/workflows/ddk-lkm.yml"
+      - ".github/workflows/ksud.yml"
+      - ".github/workflows/ksuinit.yml"
+      - ".github/scripts/setup-rust-build.sh"
       - "debug.keystore"
       - "manager/**"
+      - "kernel/**"
+      - "userspace/**"
+      - "Cargo.lock"
+      - "Cargo.toml"
   workflow_dispatch:
 
 jobs:
+  # The kernel modules and ksuinit are built from this tree so the ksud
+  # binary below embeds modules crowned for the pinned debug key. This
+  # mirrors the upstream Build Manager pipeline (build-manager.yml):
+  # DDK containers build kernelsu.ko per KMI, ksuinit is built from
+  # source, and ksud packs both. EXPECTED_SIZE/HASH are the pinned key's
+  # values from the header above; without them the module would crown
+  # the official certificate instead of this manager.
+  build-lkm:
+    uses: ./.github/workflows/build-lkm.yml
+    with:
+      expected_size: "0x317"
+      expected_hash: "4f3cc4b47a63a9d5a971ab86516bdfd4c2ae3db7e116be30a1053f2868df0324"
+    secrets: inherit
+
+  build-ksuinit:
+    uses: ./.github/workflows/ksuinit.yml
+
+  # Builds ksud for arm64 from userspace/ksud in this tree, packing the
+  # LKM and ksuinit artifacts above into userspace/ksud/bin/ so the
+  # resulting binary embeds them (see ksud.yml).
+  build-ksud:
+    needs: [build-lkm, build-ksuinit]
+    uses: ./.github/workflows/ksud.yml
+    with:
+      target: aarch64-linux-android
+      pack_lkm: true
+      pack_ksuinit: true
+
   build-debug-apk:
+    needs: [build-ksud]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -93,6 +149,25 @@ jobs:
           test -f "$GITHUB_WORKSPACE/debug.keystore" || { echo "ERROR: debug.keystore missing at repo root; see workflow header."; exit 1; }
           mkdir -p ~/.android
           cp "$GITHUB_WORKSPACE/debug.keystore" ~/.android/debug.keystore
+
+      # libksud.so is git-ignored, so a fresh checkout has none, and the
+      # APK packages whatever sits in src/main/jniLibs. Fetch the ksud
+      # built from this tree (build-ksud job above) and place it before
+      # Gradle runs. Fails loudly if the artifact is missing or empty so
+      # a build never ships silently without ksud.
+      - name: Download built ksud artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ksud-aarch64-linux-android
+          path: ${{ github.workspace }}/ksud-artifact
+
+      - name: Place built ksud into jniLibs
+        working-directory: ${{ github.workspace }}
+        run: |
+          test -s ksud-artifact/ksud || { echo "ERROR: ksud artifact missing or empty; the ksud build step must run before Gradle."; exit 1; }
+          mkdir -p manager/app/src/main/jniLibs/arm64-v8a
+          cp ksud-artifact/ksud manager/app/src/main/jniLibs/arm64-v8a/libksud.so
+          ls -la manager/app/src/main/jniLibs/arm64-v8a/
 
       - name: Build debug APK
         run: ./gradlew clean :app:assembleDebug -PKSU_NAME="Cronch SU" -Pandroid.injected.signing.v3-enabled=false -Pandroid.injected.signing.v4-enabled=false --stacktrace
