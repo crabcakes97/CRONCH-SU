@@ -129,6 +129,8 @@ fun HomePager(
         onJailbreakClick = {
             showLateLoadChooser = true
         },
+        onOpenActivityLog = { navigator.push(Route.ActivityLog) },
+        onOpenProviders = { navigator.push(Route.Providers) },
     )
 
     when (LocalUiMode.current) {

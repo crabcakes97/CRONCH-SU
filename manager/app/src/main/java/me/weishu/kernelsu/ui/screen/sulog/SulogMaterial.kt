@@ -1,5 +1,6 @@
 package me.weishu.kernelsu.ui.screen.sulog
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,12 +30,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CheckableDropdownMenuItem
 import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.DropdownMenuPopup
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme.colorScheme
@@ -77,6 +80,8 @@ import me.weishu.kernelsu.ui.component.material.TopBarBackButton
 import me.weishu.kernelsu.ui.component.statustag.StatusTag
 import me.weishu.kernelsu.ui.util.SulogEntry
 import me.weishu.kernelsu.ui.util.SulogEventFilter
+import me.weishu.kernelsu.ui.util.SulogStatus
+import me.weishu.kernelsu.ui.util.sulogEntryStatusKind
 
 @Composable
 fun SulogScreenMaterial(
@@ -124,6 +129,12 @@ fun SulogScreenMaterial(
                     TopBarBackButton(onClick = actions.onBack)
                 },
                 actions = {
+                    IconButton(onClick = actions.onExport) {
+                        Icon(
+                            imageVector = Icons.Filled.Share,
+                            contentDescription = stringResource(R.string.sulog_export),
+                        )
+                    }
                     IconButton(onClick = actions.onCleanFile) {
                         Icon(
                             imageVector = Icons.Filled.DeleteSweep,
@@ -247,6 +258,37 @@ fun SulogScreenMaterial(
                     }
                 }
 
+                item {
+                    Column(
+                        modifier = Modifier.padding(bottom = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = stringResource(
+                                R.string.sulog_status_counts,
+                                state.statusCounts.success,
+                                state.statusCounts.failure,
+                                state.statusCounts.warning,
+                                state.statusCounts.unknown,
+                            ),
+                            style = typography.labelMedium,
+                            color = colorScheme.onSurfaceVariant,
+                        )
+                        Row(
+                            modifier = Modifier.horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            SulogStatus.entries.forEach { status ->
+                                FilterChip(
+                                    selected = status in state.selectedStatuses,
+                                    onClick = { actions.onToggleStatusFilter(status) },
+                                    label = { Text(sulogStatusLabel(status)) },
+                                )
+                            }
+                        }
+                    }
+                }
+
                 sulogEntriesSection(
                     entries = state.visibleEntries,
                     errorMessage = state.errorMessage,
@@ -323,7 +365,18 @@ private fun LazyListScope.sulogEntriesSection(
                             }
                         },
                         trailingContent = {
-                            sulogEntryStatus(entry)?.let { Text(it) }
+                            val statusKind = sulogEntryStatusKind(entry)
+                            val statusColor = when (statusKind) {
+                                SulogStatus.Success -> colorScheme.primary
+                                SulogStatus.Failure -> colorScheme.error
+                                SulogStatus.Warning -> colorScheme.tertiary
+                                SulogStatus.Unknown -> colorScheme.onSurfaceVariant
+                            }
+                            val statusText = sulogEntryStatus(entry)
+                                ?: if (statusKind == SulogStatus.Warning) sulogStatusLabel(statusKind) else null
+                            statusText?.let {
+                                Text(it, color = statusColor)
+                            }
                         },
                     )
                 }

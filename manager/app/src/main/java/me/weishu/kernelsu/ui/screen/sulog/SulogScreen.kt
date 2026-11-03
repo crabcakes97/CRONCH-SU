@@ -1,8 +1,10 @@
 package me.weishu.kernelsu.ui.screen.sulog
 
+import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -15,10 +17,13 @@ import me.weishu.kernelsu.R
 import me.weishu.kernelsu.ui.LocalUiMode
 import me.weishu.kernelsu.ui.UiMode
 import me.weishu.kernelsu.ui.navigation3.LocalNavigator
+import me.weishu.kernelsu.ui.screen.superuser.rememberExportTextLauncher
+import me.weishu.kernelsu.ui.util.CronchLog
 import me.weishu.kernelsu.ui.util.SulogEntry
 import me.weishu.kernelsu.ui.util.SulogEventFilter
 import me.weishu.kernelsu.ui.util.SulogEventType
 import me.weishu.kernelsu.ui.util.SulogFile
+import me.weishu.kernelsu.ui.util.SulogStatus
 import me.weishu.kernelsu.ui.util.toSulogDisplayName
 import me.weishu.kernelsu.ui.viewmodel.SulogViewModel
 
@@ -40,12 +45,34 @@ fun SulogScreen() {
         isSulogEnabled = uiState.isSulogEnabled,
         searchText = uiState.searchText,
         selectedFilters = uiState.selectedFilters,
+        selectedStatuses = uiState.selectedStatuses,
+        statusCounts = uiState.statusCounts,
         files = uiState.files,
         selectedFilePath = uiState.selectedFilePath,
         entries = uiState.entries,
         visibleEntries = uiState.visibleEntries,
         errorMessage = uiState.errorMessage,
     )
+
+    val context = LocalContext.current
+    val exportedMessage = stringResource(R.string.sulog_exported)
+    val exportFailedMessage = stringResource(R.string.sulog_export_failed)
+    val exportLog = rememberExportTextLauncher(
+        fileName = "cronch-su-root-operation-log.txt",
+        buildText = {
+            uiState.visibleEntries.joinToString(separator = "\n") { it.rawLine }
+        },
+        onDone = { success ->
+            val message = if (success) exportedMessage else exportFailedMessage
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            CronchLog.log(
+                "Sulog",
+                if (success) "root operation log exported: ${uiState.visibleEntries.size} entries"
+                else "root operation log export failed",
+            )
+        },
+    )
+
     val actions = SulogActions(
         onBack = dropUnlessResumed { navigator.pop() },
         onRefresh = viewModel::refreshLatest,
@@ -53,6 +80,8 @@ fun SulogScreen() {
         onCleanFile = viewModel::cleanFile,
         onSearchTextChange = viewModel::setSearchText,
         onToggleFilter = viewModel::toggleFilter,
+        onToggleStatusFilter = viewModel::toggleStatusFilter,
+        onExport = exportLog,
         onSelectFile = viewModel::refresh,
     )
 
@@ -69,6 +98,17 @@ fun sulogFilterLabel(filter: SulogEventFilter): String {
         SulogEventFilter.SuCompat -> stringResource(R.string.sulog_filter_sucompat)
         SulogEventFilter.IoctlGrantRoot -> stringResource(R.string.sulog_filter_ioctl_grant_root)
         SulogEventFilter.DaemonEvent -> stringResource(R.string.sulog_filter_daemon_restart)
+    }
+}
+
+/** Localized outcome label for one sulog status kind. */
+@Composable
+fun sulogStatusLabel(status: SulogStatus): String {
+    return when (status) {
+        SulogStatus.Success -> stringResource(R.string.sulog_status_success)
+        SulogStatus.Failure -> stringResource(R.string.sulog_status_failure)
+        SulogStatus.Warning -> stringResource(R.string.sulog_status_warning)
+        SulogStatus.Unknown -> stringResource(R.string.sulog_status_unknown)
     }
 }
 

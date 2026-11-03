@@ -66,7 +66,10 @@ import me.weishu.kernelsu.ui.util.CronchLog
  * below takes explicit colors so it renders correctly under either.
  */
 @Composable
-fun CronchLogConsoleMaterial(modifier: Modifier = Modifier) {
+fun CronchLogConsoleMaterial(
+    modifier: Modifier = Modifier,
+    onOpenFullLog: (() -> Unit)? = null,
+) {
     val isDark = isInDarkTheme()
     CronchLogConsole(
         containerColor = cronchLogSurfaceColor(isDark),
@@ -74,11 +77,15 @@ fun CronchLogConsoleMaterial(modifier: Modifier = Modifier) {
         mutedColor = cronchLogContentColor(isDark).copy(alpha = 0.7f),
         accentColor = CronchDoritoOrange,
         modifier = modifier,
+        onOpenFullLog = onOpenFullLog,
     )
 }
 
 @Composable
-fun CronchLogConsoleMiuix(modifier: Modifier = Modifier) {
+fun CronchLogConsoleMiuix(
+    modifier: Modifier = Modifier,
+    onOpenFullLog: (() -> Unit)? = null,
+) {
     val isDark = isInDarkTheme()
     CronchLogConsole(
         containerColor = cronchLogSurfaceColor(isDark),
@@ -86,6 +93,7 @@ fun CronchLogConsoleMiuix(modifier: Modifier = Modifier) {
         mutedColor = cronchLogContentColor(isDark).copy(alpha = 0.7f),
         accentColor = CronchDoritoOrange,
         modifier = modifier,
+        onOpenFullLog = onOpenFullLog,
     )
 }
 
@@ -96,6 +104,7 @@ private fun CronchLogConsole(
     mutedColor: Color,
     accentColor: Color,
     modifier: Modifier = Modifier,
+    onOpenFullLog: (() -> Unit)? = null,
 ) {
     val entries by CronchLog.entries.collectAsStateWithLifecycle()
     val rainbow by CronchLog.rainbowEnabled.collectAsStateWithLifecycle()
@@ -196,6 +205,16 @@ private fun CronchLogConsole(
                         text = stringResource(R.string.cronch_log_copy),
                         color = contentColor,
                     )
+                }
+                if (onOpenFullLog != null) {
+                    TextButton(
+                        onClick = onOpenFullLog,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.activity_log_open_full),
+                            color = accentColor,
+                        )
+                    }
                 }
             }
             // Latest: its own right-aligned row, only when scrolled up.

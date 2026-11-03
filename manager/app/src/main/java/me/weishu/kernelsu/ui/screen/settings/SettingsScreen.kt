@@ -59,6 +59,9 @@ fun SettingPager(
         onSetEnableWebDebugging = viewModel::setEnableWebDebugging,
         onSetAutoJailbreak = viewModel::setAutoJailbreak,
         onSetUseSoftReboot = viewModel::setUseSoftReboot,
+        onSetRainbowLog = viewModel::setRainbowLog,
+        onOpenActivityLog = { navigator.push(Route.ActivityLog) },
+        onOpenSulog = { navigator.push(Route.Sulog) },
         onOpenAbout = { navigator.push(Route.About) },
         onOpenDeviceInfo = { navigator.push(Route.DeviceInfo) },
     )

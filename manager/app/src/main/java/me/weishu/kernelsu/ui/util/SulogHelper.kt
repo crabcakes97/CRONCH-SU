@@ -45,6 +45,52 @@ enum class SulogEventFilter(val eventType: SulogEventType?) {
     DaemonEvent(SulogEventType.DaemonEvent),
 }
 
+/**
+ * Outcome of one sulog entry, derived from the recorded fields only:
+ * a `retval` of 0 means the operation succeeded, any other `retval` means
+ * it failed, a `dropped` record is a warning (entries were lost), and
+ * anything without a recorded outcome is Unknown. Daemon restarts carry
+ * no retval, so they are Unknown — the log does not record an outcome
+ * for them, and this screen does not invent one.
+ */
+enum class SulogStatus {
+    Success,
+    Failure,
+    Warning,
+    Unknown,
+}
+
+fun defaultSulogStatuses(): Set<SulogStatus> = SulogStatus.entries.toSet()
+
+fun sulogEntryStatusKind(entry: SulogEntry): SulogStatus {
+    if (entry.eventType == SulogEventType.Dropped) return SulogStatus.Warning
+    val retval = entry.fields["retval"]?.toIntOrNull() ?: return SulogStatus.Unknown
+    return if (retval == 0) SulogStatus.Success else SulogStatus.Failure
+}
+
+data class SulogStatusCounts(
+    val success: Int = 0,
+    val failure: Int = 0,
+    val warning: Int = 0,
+    val unknown: Int = 0,
+)
+
+fun countSulogStatuses(entries: List<SulogEntry>): SulogStatusCounts {
+    var success = 0
+    var failure = 0
+    var warning = 0
+    var unknown = 0
+    entries.forEach { entry ->
+        when (sulogEntryStatusKind(entry)) {
+            SulogStatus.Success -> success++
+            SulogStatus.Failure -> failure++
+            SulogStatus.Warning -> warning++
+            SulogStatus.Unknown -> unknown++
+        }
+    }
+    return SulogStatusCounts(success, failure, warning, unknown)
+}
+
 fun defaultSulogEventFilters(): Set<SulogEventFilter> = SulogEventFilter.entries.toSet()
 
 data class SulogEntry(
@@ -142,14 +188,16 @@ fun buildVisibleSulogEntries(
     entries: List<SulogEntry>,
     searchText: String,
     selectedFilters: Set<SulogEventFilter>,
+    selectedStatuses: Set<SulogStatus> = defaultSulogStatuses(),
 ): List<SulogEntry> {
     val normalizedQuery = searchText.trim().lowercase()
     val activeEventTypes = selectedFilters.mapNotNull { it.eventType }.toSet()
     return entries.asReversed().filter { entry ->
         val alwaysVisible = entry.eventType == SulogEventType.Dropped || entry.eventType == SulogEventType.Unknown
         val filterMatches = alwaysVisible || entry.eventType in activeEventTypes
+        val statusMatches = sulogEntryStatusKind(entry) in selectedStatuses
         val queryMatches = normalizedQuery.isEmpty() || entry.searchableText.contains(normalizedQuery)
-        filterMatches && queryMatches
+        filterMatches && statusMatches && queryMatches
     }
 }
 

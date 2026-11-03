@@ -128,7 +128,10 @@ fun HomePagerMiuix(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         CronchWordmarkMiuix()
-                        CronchLogConsoleMiuix(modifier = Modifier.fillMaxWidth())
+                        CronchLogConsoleMiuix(
+                            modifier = Modifier.fillMaxWidth(),
+                            onOpenFullLog = actions.onOpenActivityLog,
+                        )
                         if (state.showManagerPrBuildWarning) {
                             WarningCard(stringResource(id = R.string.home_pr_build_warning), level = WarningLevel.Notice)
                         } else if (state.showKernelPrBuildWarning) {
@@ -165,6 +168,11 @@ fun HomePagerMiuix(
                         CoolRanchPanel(
                             state = state,
                             actions = actions,
+                        )
+                        ProviderSummaryCardMiuix(
+                            state = state,
+                            actions = actions,
+                            modifier = Modifier.fillMaxWidth(),
                         )
                         CronchometerSectionMiuix(
                             modifier = Modifier.fillMaxWidth(),

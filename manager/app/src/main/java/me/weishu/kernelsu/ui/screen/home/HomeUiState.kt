@@ -2,6 +2,7 @@ package me.weishu.kernelsu.ui.screen.home
 
 import androidx.compose.runtime.Immutable
 import me.weishu.kernelsu.KernelVersion
+import me.weishu.kernelsu.ui.provider.ActiveProviderSummary
 
 @Immutable
 data class HomeUiState(
@@ -19,6 +20,7 @@ data class HomeUiState(
     val isRootAvailable: Boolean,
     val isSafeMode: Boolean,
     val isLateLoadMode: Boolean,
+    val activeProvider: ActiveProviderSummary = ActiveProviderSummary.None,
     val currentManagerVersionCode: Long,
     val systemInfo: SystemInfo,
 ) {
@@ -58,4 +60,6 @@ data class HomeActions(
     val onInstallClick: () -> Unit,
     val onOpenUrl: (String) -> Unit,
     val onJailbreakClick: () -> Unit = {},
+    val onOpenProviders: () -> Unit = {},
+    val onOpenActivityLog: () -> Unit = {},
 )

@@ -17,9 +17,13 @@ import me.weishu.kernelsu.data.repository.SettingsRepositoryImpl
 import me.weishu.kernelsu.ui.util.SulogEntry
 import me.weishu.kernelsu.ui.util.SulogEventFilter
 import me.weishu.kernelsu.ui.util.SulogFile
+import me.weishu.kernelsu.ui.util.SulogStatus
+import me.weishu.kernelsu.ui.util.SulogStatusCounts
+import me.weishu.kernelsu.ui.util.defaultSulogStatuses
 import me.weishu.kernelsu.ui.util.SulogFileCleanAction
 import me.weishu.kernelsu.ui.util.buildVisibleSulogEntries
 import me.weishu.kernelsu.ui.util.cleanSulogFile
+import me.weishu.kernelsu.ui.util.countSulogStatuses
 import me.weishu.kernelsu.ui.util.defaultSulogEventFilters
 import me.weishu.kernelsu.ui.util.deleteSulogFile
 import me.weishu.kernelsu.ui.util.listSulogFiles
@@ -34,6 +38,8 @@ data class SulogUiState(
     val isSulogEnabled: Boolean = false,
     val searchText: String = "",
     val selectedFilters: Set<SulogEventFilter> = defaultSulogEventFilters(),
+    val selectedStatuses: Set<SulogStatus> = defaultSulogStatuses(),
+    val statusCounts: SulogStatusCounts = SulogStatusCounts(),
     val files: List<SulogFile> = emptyList(),
     val selectedFilePath: String? = null,
     val entries: List<SulogEntry> = emptyList(),
@@ -49,6 +55,7 @@ class SulogViewModel(
     private val entriesFlow = MutableStateFlow<List<SulogEntry>>(emptyList())
     private val searchTextFlow = MutableStateFlow("")
     private val selectedFiltersFlow = MutableStateFlow(defaultSulogEventFilters())
+    private val selectedStatusesFlow = MutableStateFlow(defaultSulogStatuses())
 
     private var refreshJob: Job? = null
 
@@ -62,10 +69,15 @@ class SulogViewModel(
         _uiState.update { it.copy(selectedFilters = savedFilters) }
 
         viewModelScope.launch(Dispatchers.Default) {
-            combine(entriesFlow, searchTextFlow, selectedFiltersFlow) { entries, searchText, selectedFilters ->
-                buildVisibleSulogEntries(entries, searchText, selectedFilters)
+            combine(entriesFlow, searchTextFlow, selectedFiltersFlow, selectedStatusesFlow) { entries, searchText, selectedFilters, selectedStatuses ->
+                buildVisibleSulogEntries(entries, searchText, selectedFilters, selectedStatuses)
             }.collect { visibleEntries ->
                 _uiState.update { it.copy(visibleEntries = visibleEntries) }
+            }
+        }
+        viewModelScope.launch(Dispatchers.Default) {
+            entriesFlow.collect { entries ->
+                _uiState.update { it.copy(statusCounts = countSulogStatuses(entries)) }
             }
         }
     }
@@ -99,6 +111,8 @@ class SulogViewModel(
                     isSulogEnabled = isSulogEnabled,
                     searchText = currentState.searchText,
                     selectedFilters = currentState.selectedFilters,
+                    selectedStatuses = currentState.selectedStatuses,
+                    statusCounts = countSulogStatuses(entries),
                     files = files,
                     selectedFilePath = selectedFile?.path,
                     entries = entries,
@@ -166,6 +180,22 @@ class SulogViewModel(
             repo.suLogFilters = selectedFilters.map { it.name }.toSet()
             currentState.copy(
                 selectedFilters = selectedFilters,
+            )
+        }
+    }
+
+    /** Outcome filter. Session-only on purpose: the persisted suLogFilters
+     *  pref stores event filters; outcomes reset to all on entering the
+     *  screen. Deselecting every outcome re-selects all, so the list can
+     *  never be emptied by accident. */
+    fun toggleStatusFilter(status: SulogStatus) {
+        _uiState.update { currentState ->
+            val selectedStatuses = currentState.selectedStatuses.toMutableSet().apply {
+                if (!add(status)) remove(status)
+            }.ifEmpty { defaultSulogStatuses() }.toSet()
+            selectedStatusesFlow.value = selectedStatuses
+            currentState.copy(
+                selectedStatuses = selectedStatuses,
             )
         }
     }

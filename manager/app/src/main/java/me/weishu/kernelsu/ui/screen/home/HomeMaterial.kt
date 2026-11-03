@@ -96,7 +96,7 @@ fun HomePagerMaterial(
             verticalArrangement = Arrangement.spacedBy(13.dp)
         ) {
             CronchWordmark()
-            CronchLogConsoleMaterial()
+            CronchLogConsoleMaterial(onOpenFullLog = actions.onOpenActivityLog)
             if (state.showManagerPrBuildWarning) {
                 WarningCard(stringResource(id = R.string.home_pr_build_warning), level = WarningLevel.Notice)
             } else if (state.showKernelPrBuildWarning) {
@@ -131,6 +131,10 @@ fun HomePagerMaterial(
                 WarningCard(stringResource(id = R.string.grant_root_failed))
             }
             CoolRanchPanel(
+                state = state,
+                actions = actions,
+            )
+            ProviderSummaryCardMaterial(
                 state = state,
                 actions = actions,
             )

@@ -61,7 +61,10 @@ data class SettingsUiState(
     val autoJailbreak: Boolean = false,
 
     // Soft Reboot
-    val useSoftReboot: Boolean = false
+    val useSoftReboot: Boolean = false,
+
+    // Rainbow Coop Log
+    val rainbowLog: Boolean = true
 )
 
 @Immutable
@@ -80,6 +83,9 @@ data class SettingsScreenActions(
     val onSetEnableWebDebugging: (Boolean) -> Unit,
     val onSetAutoJailbreak: (Boolean) -> Unit,
     val onSetUseSoftReboot: (Boolean) -> Unit,
+    val onSetRainbowLog: (Boolean) -> Unit,
+    val onOpenActivityLog: () -> Unit,
+    val onOpenSulog: () -> Unit,
     val onOpenAbout: () -> Unit,
     val onOpenDeviceInfo: () -> Unit,
 )

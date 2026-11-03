@@ -70,6 +70,8 @@ import me.weishu.kernelsu.ui.navigation3.Route
 import me.weishu.kernelsu.ui.navigation3.rememberNavigator
 import me.weishu.kernelsu.ui.screen.about.AboutScreen
 import me.weishu.kernelsu.ui.util.CronchLog
+import me.weishu.kernelsu.ui.screen.activitylog.ActivityLogScreen
+import me.weishu.kernelsu.ui.screen.providers.ProvidersScreen
 import me.weishu.kernelsu.ui.screen.appprofile.AppProfileScreen
 import me.weishu.kernelsu.ui.screen.colorpalette.ColorPaletteScreen
 import me.weishu.kernelsu.ui.screen.deviceinfo.DeviceInfoScreen
@@ -223,6 +225,8 @@ class MainActivity : ComponentActivity() {
                             entry<Route.Main>(swipeDismiss = swipeDismiss) { mainScreenEntry() }
                             entry<Route.About>(swipeDismiss = swipeDismiss) { AboutScreen() }
                             entry<Route.Sulog>(swipeDismiss = swipeDismiss) { SulogScreen() }
+                            entry<Route.ActivityLog>(swipeDismiss = swipeDismiss) { ActivityLogScreen() }
+                            entry<Route.Providers>(swipeDismiss = swipeDismiss) { ProvidersScreen() }
                             entry<Route.ColorPalette>(swipeDismiss = swipeDismiss) { ColorPaletteScreen() }
                             entry<Route.DeviceInfo>(swipeDismiss = swipeDismiss) { DeviceInfoScreen() }
                             entry<Route.AppProfileTemplate>(swipeDismiss = swipeDismiss) { AppProfileTemplateScreen() }

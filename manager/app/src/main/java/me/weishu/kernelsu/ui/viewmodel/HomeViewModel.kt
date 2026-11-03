@@ -18,6 +18,7 @@ import me.weishu.kernelsu.ksuApp
 import me.weishu.kernelsu.ui.screen.home.HomeUiState
 import me.weishu.kernelsu.ui.screen.home.SystemInfo
 import me.weishu.kernelsu.ui.screen.home.getManagerVersion
+import me.weishu.kernelsu.ui.provider.summarizeKernelSide
 import me.weishu.kernelsu.ui.util.CronchLog
 import me.weishu.kernelsu.ui.util.getSELinuxStatusRaw
 import me.weishu.kernelsu.ui.util.resolveDeviceName
@@ -59,6 +60,18 @@ class HomeViewModel : ViewModel() {
                 (if (Natives.isLateLoadMode) ", late-load" else ""),
         )
 
+        // Active provider summary for the dashboard card. The Next probes are
+        // read-only JNI getters with graceful-degradation sentinels; wrapped
+        // anyway so a probe failure can never break the Home state.
+        val activeProvider = summarizeKernelSide(
+            isManager = isManager,
+            ksuVersion = ksuVersion,
+            kernelUapiVersion = kernelUAPIVersion,
+            versionTag = runCatching { Natives.getVersionTag() }.getOrNull(),
+            hookMode = runCatching { Natives.getHookMode() }.getOrNull(),
+            managerAppid = runCatching { Natives.getManagerAppid() }.getOrNull(),
+        )
+
         return HomeUiState(
             kernelVersion = kernelVersion,
             ksuVersion = ksuVersion,
@@ -74,6 +87,7 @@ class HomeViewModel : ViewModel() {
             isRootAvailable = isRootAvailable,
             isSafeMode = Natives.isSafeMode,
             isLateLoadMode = Natives.isLateLoadMode,
+            activeProvider = activeProvider,
             currentManagerVersionCode = managerVersion.versionCode,
             systemInfo = SystemInfo(
                 kernelVersion = Os.uname().release,

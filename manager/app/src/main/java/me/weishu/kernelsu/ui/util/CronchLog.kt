@@ -26,6 +26,10 @@ object CronchLog {
     /** Maximum lines kept; older lines drop off the top as new ones arrive. */
     const val MAX_LINES = 500
 
+    /** Severity of one log entry. Call sites pass it explicitly; it is never
+     *  guessed from message text. */
+    enum class Severity { Debug, Info, Warning, Error }
+
     data class Entry(
         val timeMillis: Long,
         val seq: Long,
@@ -33,6 +37,12 @@ object CronchLog {
         val message: String,
         /** Rainbow step this line was born with. Fixed at append time. */
         val hueIndex: Long,
+        /** Structured severity; defaults to Info for the legacy call sites. */
+        val severity: Severity = Severity.Info,
+        /** Short event name (usually the component); defaults to the tag. */
+        val event: String = tag,
+        /** Optional diagnostic detail. Never secrets, keys, or file contents. */
+        val details: String? = null,
     )
 
     private val seq = AtomicLong(0L)
@@ -73,6 +83,19 @@ object CronchLog {
     }
 
     fun log(tag: String, message: String) {
+        log(Severity.Info, tag, tag, message, null)
+    }
+
+    /** Structured entry: severity, component ([tag]), event name, message,
+     *  and optional diagnostic detail. [details] must never carry secrets,
+     *  keys, passwords, or file contents. */
+    fun log(
+        severity: Severity,
+        tag: String,
+        event: String,
+        message: String,
+        details: String? = null,
+    ) {
         try {
             val entry = Entry(
                 timeMillis = System.currentTimeMillis(),
@@ -80,6 +103,9 @@ object CronchLog {
                 tag = tag,
                 message = message,
                 hueIndex = hueSeq.getAndIncrement(),
+                severity = severity,
+                event = event,
+                details = details,
             )
             _entries.update { (it + entry).takeLast(MAX_LINES) }
         } catch (_: Exception) {
@@ -119,6 +145,19 @@ object CronchLog {
         for (entry in _entries.value) {
             appendLine("[${formatTime(entry.timeMillis)}] [${entry.tag}] ${entry.message}")
         }
+    }
+
+    /** Full structured rendering, for the Activity Log export: timestamp,
+     *  severity, component, event, message, and diagnostic detail. */
+    fun formatForExport(): String = buildString {
+        for (entry in _entries.value) {
+            appendLine(formatEntryFull(entry))
+        }
+    }
+
+    fun formatEntryFull(entry: Entry): String = buildString {
+        append("[${formatTime(entry.timeMillis)}] [${entry.severity}] [${entry.tag}] ${entry.event}: ${entry.message}")
+        entry.details?.let { append(" | $it") }
     }
 
     fun formatTime(timeMillis: Long): String =

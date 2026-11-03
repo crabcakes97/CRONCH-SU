@@ -3,6 +3,9 @@ package me.weishu.kernelsu.ui.screen.sulog
 import me.weishu.kernelsu.ui.util.SulogEntry
 import me.weishu.kernelsu.ui.util.SulogEventFilter
 import me.weishu.kernelsu.ui.util.SulogFile
+import me.weishu.kernelsu.ui.util.SulogStatus
+import me.weishu.kernelsu.ui.util.SulogStatusCounts
+import me.weishu.kernelsu.ui.util.defaultSulogStatuses
 
 data class SulogScreenState(
     val isLoading: Boolean = true,
@@ -11,6 +14,8 @@ data class SulogScreenState(
     val isSulogEnabled: Boolean = false,
     val searchText: String = "",
     val selectedFilters: Set<SulogEventFilter> = emptySet(),
+    val selectedStatuses: Set<SulogStatus> = defaultSulogStatuses(),
+    val statusCounts: SulogStatusCounts = SulogStatusCounts(),
     val files: List<SulogFile> = emptyList(),
     val selectedFilePath: String? = null,
     val entries: List<SulogEntry> = emptyList(),
@@ -25,6 +30,8 @@ data class SulogActions(
     val onCleanFile: () -> Unit,
     val onSearchTextChange: (String) -> Unit,
     val onToggleFilter: (SulogEventFilter) -> Unit,
+    val onToggleStatusFilter: (SulogStatus) -> Unit,
+    val onExport: () -> Unit,
     val onSelectFile: (String) -> Unit,
 )
 

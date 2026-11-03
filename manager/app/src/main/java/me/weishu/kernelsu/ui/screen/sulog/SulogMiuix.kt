@@ -74,7 +74,9 @@ import me.weishu.kernelsu.ui.theme.LocalEnableBlur
 import me.weishu.kernelsu.ui.util.BlurredBar
 import me.weishu.kernelsu.ui.util.SulogEntry
 import me.weishu.kernelsu.ui.util.SulogEventFilter
+import me.weishu.kernelsu.ui.util.SulogStatus
 import me.weishu.kernelsu.ui.util.rememberBlurBackdrop
+import me.weishu.kernelsu.ui.util.sulogEntryStatusKind
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.DropdownImpl
@@ -172,6 +174,11 @@ fun SulogScreenMiuix(
                             }
                         },
                         actions = {
+                            TextButton(
+                                text = stringResource(R.string.sulog_export),
+                                onClick = actions.onExport,
+                                colors = ButtonDefaults.textButtonColorsPrimary(),
+                            )
                             IconButton(
                                 modifier = Modifier.padding(end = 8.dp),
                                 onClick = actions.onCleanFile,
@@ -201,6 +208,17 @@ fun SulogScreenMiuix(
                                                     optionSize = SulogEventFilter.entries.size,
                                                     onSelectedIndexChange = {
                                                         actions.onToggleFilter(filter)
+                                                    },
+                                                    index = index,
+                                                )
+                                            }
+                                            SulogStatus.entries.forEachIndexed { index, status ->
+                                                DropdownImpl(
+                                                    text = sulogStatusLabel(status),
+                                                    isSelected = status in state.selectedStatuses,
+                                                    optionSize = SulogStatus.entries.size,
+                                                    onSelectedIndexChange = {
+                                                        actions.onToggleStatusFilter(status)
                                                     },
                                                     index = index,
                                                 )
@@ -334,6 +352,29 @@ fun SulogScreenMiuix(
                                             actions.onSelectFile(file.path)
                                         }
                                     },
+                                )
+                            }
+                        }
+
+                        item {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp)
+                                    .padding(bottom = 12.dp),
+                                insideMargin = PaddingValues(16.dp),
+                            ) {
+                                Text(
+                                    text = stringResource(
+                                        R.string.sulog_status_counts,
+                                        state.statusCounts.success,
+                                        state.statusCounts.failure,
+                                        state.statusCounts.warning,
+                                        state.statusCounts.unknown,
+                                    ),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight(550),
+                                    color = colorScheme.onSurfaceVariantSummary,
                                 )
                             }
                         }
@@ -506,10 +547,19 @@ private fun SulogEntryCard(
                     }
                 }
             }
-            sulogEntryStatus(entry)?.let {
+            val statusKind = sulogEntryStatusKind(entry)
+            val statusColor = when (statusKind) {
+                SulogStatus.Success -> colorScheme.primary
+                SulogStatus.Failure -> colorScheme.error
+                SulogStatus.Warning -> colorScheme.tertiary
+                SulogStatus.Unknown -> colorScheme.onSurfaceVariantActions
+            }
+            val statusText = sulogEntryStatus(entry)
+                ?: if (statusKind == SulogStatus.Warning) sulogStatusLabel(statusKind) else null
+            statusText?.let {
                 Text(
                     text = it,
-                    color = colorScheme.onSurfaceVariantActions,
+                    color = statusColor,
                     fontSize = 12.sp,
                     fontWeight = FontWeight(550),
                     maxLines = 1,

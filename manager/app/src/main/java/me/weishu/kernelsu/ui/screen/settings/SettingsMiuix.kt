@@ -163,6 +163,20 @@ fun SettingPagerMiuix(
                             },
                             onClick = actions.onOpenTheme
                         )
+                        SwitchPreference(
+                            title = stringResource(id = R.string.settings_rainbow_log),
+                            summary = stringResource(id = R.string.settings_rainbow_log_summary),
+                            startAction = {
+                                Icon(
+                                    Icons.Rounded.Palette,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = stringResource(id = R.string.settings_rainbow_log),
+                                    tint = colorScheme.onBackground
+                                )
+                            },
+                            checked = uiState.rainbowLog,
+                            onCheckedChange = actions.onSetRainbowLog
+                        )
                     }
 
                     KsuIsValid {
@@ -433,6 +447,32 @@ fun SettingPagerMiuix(
                             .padding(vertical = 12.dp)
                             .fillMaxWidth(),
                     ) {
+                        ArrowPreference(
+                            title = stringResource(id = R.string.settings_activity_log),
+                            summary = stringResource(id = R.string.settings_activity_log_summary),
+                            startAction = {
+                                Icon(
+                                    Icons.AutoMirrored.Rounded.Article,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = stringResource(id = R.string.settings_activity_log),
+                                    tint = colorScheme.onBackground
+                                )
+                            },
+                            onClick = actions.onOpenActivityLog,
+                        )
+                        ArrowPreference(
+                            title = stringResource(id = R.string.settings_root_op_log),
+                            summary = stringResource(id = R.string.settings_root_op_log_summary),
+                            startAction = {
+                                Icon(
+                                    Icons.Rounded.Security,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = stringResource(id = R.string.settings_root_op_log),
+                                    tint = colorScheme.onBackground
+                                )
+                            },
+                            onClick = actions.onOpenSulog,
+                        )
                         ArrowPreference(
                             title = stringResource(id = R.string.send_log),
                             startAction = {

@@ -92,6 +92,7 @@ class SettingsViewModel(
             val autoJailbreak = repo.autoJailbreak
             val useSoftReboot = repo.useSoftReboot
             val isLateLoadMode = Natives.isLateLoadMode
+            val rainbowLog = repo.rainbowLog
 
             _uiState.update {
                 it.copy(
@@ -131,6 +132,7 @@ class SettingsViewModel(
                     autoJailbreak = autoJailbreak,
                     useSoftReboot = useSoftReboot,
                     isLateLoadMode = isLateLoadMode,
+                    rainbowLog = rainbowLog,
                 )
             }
         }
@@ -374,6 +376,12 @@ class SettingsViewModel(
         repo.useSoftReboot = enabled
         _uiState.update { it.copy(useSoftReboot = enabled) }
         CronchLog.log("Settings", "soft reboot ${if (enabled) "enabled" else "disabled"}: saved")
+    }
+
+    fun setRainbowLog(enabled: Boolean) {
+        CronchLog.setRainbowEnabled(enabled)
+        _uiState.update { it.copy(rainbowLog = enabled) }
+        CronchLog.log("Settings", "rainbow log ${if (enabled) "on" else "off"}")
     }
 
     fun setSulogEnabled(enabled: Boolean) {

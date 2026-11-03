@@ -508,4 +508,73 @@ Make sure your bootloader is unlocked before proceeding.</string>
     <string name="home_cool_ranch_panel" translatable="false">Cool Ranch Panel</string>
     <string name="cronch_credit_next" translatable="false">The Next coop: KernelSU-Next devs, github.com/KernelSU-Next/KernelSU-Next</string>
     <string name="cronch_honorable_mentions" translatable="false">🐔 Honorable Mentions, the chickens what built this coop 🗿</string>
+    <string name="activity_log_title" translatable="false">🌈 Rainbow Roost — Activity Log</string>
+    <string name="activity_log_subtitle" translatable="false">Everything Cronch SU itself does, in real time. Not the root operation log. Not logcat. The Moai watches; the chicken pecks the record.</string>
+    <string name="activity_log_live" translatable="false">Live</string>
+    <string name="activity_log_paused" translatable="false">Paused — the Roost holds still</string>
+    <string name="activity_log_pause" translatable="false">Pause</string>
+    <string name="activity_log_resume" translatable="false">Resume</string>
+    <string name="activity_log_autoscroll" translatable="false">Follow</string>
+    <string name="activity_log_search_hint" translatable="false">Search the Roost…</string>
+    <string name="activity_log_filter_severity" translatable="false">Severity</string>
+    <string name="activity_log_filter_component" translatable="false">Component</string>
+    <string name="activity_log_filter_all">All</string>
+    <string name="activity_log_severity_debug">Debug</string>
+    <string name="activity_log_severity_info">Info</string>
+    <string name="activity_log_severity_warning">Warning</string>
+    <string name="activity_log_severity_error">Error</string>
+    <string name="activity_log_export" translatable="false">Export</string>
+    <string name="activity_log_exported" translatable="false">Roost exported. The Poultry Council has been notified.</string>
+    <string name="activity_log_export_failed">Export failed: %1$s</string>
+    <string name="activity_log_empty" translatable="false">Nothing pecked yet. Do something in the app and the Roost will record it. The Moai is watching.</string>
+    <string name="activity_log_no_results" translatable="false">No pecks match. The chicken looked everywhere.</string>
+    <string name="activity_log_new_entries" translatable="false">%1$d new pecks while paused</string>
+    <string name="activity_log_open_full" translatable="false">Open the Rainbow Roost</string>
+    <string name="settings_rainbow_log" translatable="false">🌈 Rainbow Coop Log</string>
+    <string name="settings_rainbow_log_summary" translatable="false">Rainbow letters in the Coop Log and the Rainbow Roost. Off means plain coop colors.</string>
+    <string name="settings_activity_log" translatable="false">Rainbow Roost — Activity Log</string>
+    <string name="settings_activity_log_summary" translatable="false">Everything Cronch SU itself does, live and rainbow.</string>
+    <string name="settings_root_op_log" translatable="false">Ledger of Pecks — Root Operation Log</string>
+    <string name="settings_root_op_log_summary" translatable="false">Root requests, module operations, and privileged commands, as the kernel recorded them.</string>
+    <string name="sulog_export" translatable="false">Export</string>
+    <string name="sulog_exported" translatable="false">Ledger exported. The Poultry Council has been notified.</string>
+    <string name="sulog_export_failed">Export failed: %1$s</string>
+    <string name="sulog_status_filter" translatable="false">Outcome</string>
+    <string name="sulog_status_success">Success</string>
+    <string name="sulog_status_failure">Failed</string>
+    <string name="sulog_status_warning">Warning</string>
+    <string name="sulog_status_unknown">Unknown</string>
+    <string name="sulog_status_counts" translatable="false">%1$d ok · %2$d failed · %3$d warnings · %4$d unknown</string>
+    <string name="providers_title" translatable="false">🪶 The Five Perches — Root Providers</string>
+    <string name="providers_subtitle" translatable="false">Every root family gets a perch in the Coop. The Council only trusts what it can detect — nothing here is faked.</string>
+    <string name="providers_summary_title" translatable="false">🪶 The Five Perches</string>
+    <string name="providers_summary_open" translatable="false">See all five perches</string>
+    <string name="providers_summary_none" translatable="false">No provider perched. No root kernel detected on this phone.</string>
+    <string name="providers_refresh" translatable="false">Re-check the perches</string>
+    <string name="provider_status_detected" translatable="false">Perched</string>
+    <string name="provider_status_not_detected" translatable="false">Not detected</string>
+    <string name="provider_status_unavailable" translatable="false">Not yet integrated</string>
+    <string name="provider_cap_integrated" translatable="false">In the Coop</string>
+    <string name="provider_cap_upstream_only" translatable="false">Upstream only — not yet integrated</string>
+    <string name="provider_cap_unsupported" translatable="false">Not supported by this provider</string>
+    <string name="provider_cap_profiles" translatable="false">Root grant profiles</string>
+    <string name="provider_cap_modules" translatable="false">Modules (flavors)</string>
+    <string name="provider_cap_module_repo" translatable="false">Module repository</string>
+    <string name="provider_cap_boot_patching" translatable="false">Boot image patching</string>
+    <string name="provider_cap_sulog" translatable="false">Root operation log</string>
+    <string name="provider_cap_hiding" translatable="false">Hiding controls (unmount / SELinux)</string>
+    <string name="provider_cap_late_load" translatable="false">Late-load / jailbreak mode</string>
+    <string name="provider_cap_soft_reboot" translatable="false">Soft reboot</string>
+    <string name="provider_cap_zygisk" translatable="false">Zygisk</string>
+    <string name="provider_cap_kernel_modules" translatable="false">Kernel modules (KPM)</string>
+    <string name="provider_cap_dynamic_manager" translatable="false">Multi-manager / dynamic manager</string>
+    <string name="provider_cap_risk_scanner" translatable="false">Risk scanner</string>
+    <string name="provider_cap_susfs" translatable="false">SUSFS hiding</string>
+    <string name="provider_cap_denylist" translatable="false">DenyList</string>
+    <string name="provider_cap_su_db" translatable="false">Superuser policy database</string>
+    <string name="provider_note_ksu" translatable="false">The home perch. Detection reads the live kernel through the crowned manager.</string>
+    <string name="provider_note_ksunext" translatable="false">The Next perch. Same wire protocol as KernelSU — told apart only by the Next-only probes (hook mode, version tag, manager app id).</string>
+    <string name="provider_note_magisk" translatable="false">The elder perch. Magisk is a boot-time root system: without a Magisk-patched boot image there is detection only, no live control. Presence here means the magisk binary answered in a root shell — not that its daemon runs.</string>
+    <string name="provider_note_apatch" translatable="false">The patch perch. APatch speaks a different tongue (supercall + SuperKey) — no probe is wired in Phase 1, so this perch reports honestly instead of guessing.</string>
+    <string name="provider_note_bakasu" translatable="false">The wild perch. BakaSU shares the KernelSU wire protocol, so a BakaSU kernel reads as KernelSU-family above; no BakaSU-specific probe is wired in Phase 1.</string>
 </resources>

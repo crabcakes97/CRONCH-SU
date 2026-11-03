@@ -138,6 +138,15 @@ fun SettingPagerMaterial(
                             }
                         )
                     }
+                    add {
+                        SegmentedSwitchItem(
+                            icon = Icons.Filled.Palette,
+                            title = stringResource(id = R.string.settings_rainbow_log),
+                            summary = stringResource(id = R.string.settings_rainbow_log_summary),
+                            checked = uiState.rainbowLog,
+                            onCheckedChange = actions.onSetRainbowLog
+                        )
+                    }
                 }
             )
 
@@ -337,6 +346,44 @@ fun SettingPagerMaterial(
             SegmentedColumn(
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 13.dp),
                 content = listOf(
+                    {
+                        SegmentedListItem(
+                            onClick = actions.onOpenActivityLog,
+                            headlineContent = { Text(stringResource(id = R.string.settings_activity_log)) },
+                            supportingContent = { Text(stringResource(id = R.string.settings_activity_log_summary)) },
+                            leadingContent = {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.Article,
+                                    stringResource(id = R.string.settings_activity_log)
+                                )
+                            },
+                            trailingContent = {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    null
+                                )
+                            },
+                        )
+                    },
+                    {
+                        SegmentedListItem(
+                            onClick = actions.onOpenSulog,
+                            headlineContent = { Text(stringResource(id = R.string.settings_root_op_log)) },
+                            supportingContent = { Text(stringResource(id = R.string.settings_root_op_log_summary)) },
+                            leadingContent = {
+                                Icon(
+                                    Icons.Filled.Security,
+                                    stringResource(id = R.string.settings_root_op_log)
+                                )
+                            },
+                            trailingContent = {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    null
+                                )
+                            },
+                        )
+                    },
                     {
                         SegmentedListItem(
                             onClick = { showBottomSheet = true },
