@@ -60,15 +60,21 @@ class ActivityLogViewModel : ViewModel() {
 
     init {
         viewModelScope.launch(Dispatchers.Default) {
+            // combine() has typed overloads only up to 5 flows in
+            // kotlinx-coroutines 1.11.0; a 7-flow call falls back to the
+            // vararg form and its lambda parameters cannot be inferred.
+            // Nest the 3 filter inputs into one Triple so the outer call
+            // has 5 flows. Semantics unchanged.
             combine(
                 CronchLog.entries,
                 _paused,
                 snapshotFlow,
                 pausedAtSeqFlow,
-                _searchText,
-                _selectedSeverities,
-                _selectedComponent,
-            ) { live, paused, snapshot, pausedAtSeq, searchText, severities, component ->
+                combine(_searchText, _selectedSeverities, _selectedComponent) { searchText, severities, component ->
+                    Triple(searchText, severities, component)
+                },
+            ) { live: List<CronchLog.Entry>, paused: Boolean, snapshot: List<CronchLog.Entry>, pausedAtSeq: Long, filter: Triple<String, Set<CronchLog.Severity>, String?> ->
+                val (searchText, severities, component) = filter
                 val query = searchText.trim().lowercase()
 
                 _components.value = live.map { it.tag }.distinct().sorted()
