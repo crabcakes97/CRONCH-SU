@@ -7,7 +7,7 @@ import me.weishu.kernelsu.Natives
  * root family roosts on its own perch in the Coop; the Council only
  * trusts a perch it can see a bird on). The capability catalog below
  * is grounded in the upstream study notes in
- * `upstream-study/*-STUDY.md` — what each upstream supports, and what
+ * `upstream-study/` (`*-STUDY.md`) — what each upstream supports, and what
  * Cronch SU Phase 1 actually drives. Nothing is flattened: a capability
  * an upstream has but Cronch SU cannot yet drive is UPSTREAM_ONLY, and
  * a capability an upstream does not have at all is UNSUPPORTED. No

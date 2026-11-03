@@ -56,7 +56,7 @@ fun SulogScreen() {
 
     val context = LocalContext.current
     val exportedMessage = stringResource(R.string.sulog_exported)
-    val exportFailedMessage = stringResource(R.string.sulog_export_failed)
+    val exportFailedMessage = stringResource(R.string.sulog_export_failed, "could not write file")
     val exportLog = rememberExportTextLauncher(
         fileName = "cronch-su-root-operation-log.txt",
         buildText = {

@@ -160,7 +160,7 @@ private fun ProviderCardMiuix(provider: ProviderInfo) {
                     ) {
                         val (glyph, glyphColor) = when (capability.state) {
                             CapabilityState.INTEGRATED -> "✓" to colorScheme.primary
-                            CapabilityState.UPSTREAM_ONLY -> "◌" to colorScheme.tertiary
+                            CapabilityState.UPSTREAM_ONLY -> "◌" to colorScheme.tertiaryContainer
                             CapabilityState.UNSUPPORTED -> "✗" to colorScheme.onSurfaceVariantSummary
                         }
                         Text(text = glyph, color = glyphColor, fontSize = 14.sp)

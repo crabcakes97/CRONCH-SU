@@ -551,7 +551,7 @@ private fun SulogEntryCard(
             val statusColor = when (statusKind) {
                 SulogStatus.Success -> colorScheme.primary
                 SulogStatus.Failure -> colorScheme.error
-                SulogStatus.Warning -> colorScheme.tertiary
+                SulogStatus.Warning -> colorScheme.tertiaryContainer
                 SulogStatus.Unknown -> colorScheme.onSurfaceVariantActions
             }
             val statusText = sulogEntryStatus(entry)
