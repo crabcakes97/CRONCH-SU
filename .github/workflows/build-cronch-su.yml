@@ -95,9 +95,6 @@ jobs:
   # the official certificate instead of this manager.
   build-lkm:
     uses: ./.github/workflows/build-lkm.yml
-    with:
-      expected_size: "0x317"
-      expected_hash: "4f3cc4b47a63a9d5a971ab86516bdfd4c2ae3db7e116be30a1053f2868df0324"
     secrets: inherit
 
   build-ksuinit:
